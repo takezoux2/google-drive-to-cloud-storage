@@ -36,3 +36,44 @@ Google Driveのファイルを、ファイル化してCloud Storageへコピー�
 
 ```
 
+# 使い方
+
+## インストール
+
+```bash
+pnpm install
+pnpm build
+```
+
+## 設定ファイル
+
+`config.yaml`を作成する:
+
+```yaml
+mappings:
+  - driveFolderId: "1AbCdEfGhIjKlMnOpQrStUvWxYz"
+    destination:
+      provider: gcs
+      bucket: "my-bucket"
+      prefix: "backups/team-a"
+
+  - driveFolderId: "2XyZ..."
+    destination:
+      provider: s3
+      bucket: "my-s3-bucket"
+      region: "ap-northeast-1"
+      prefix: "backups/team-b"
+```
+
+## 認証
+
+- Google Drive: ADC(Application Default Credentials)で取得したサービスアカウントを使用する。事前に`gcloud auth application-default login`、または`GOOGLE_APPLICATION_CREDENTIALS`環境変数でサービスアカウントキーを指定する
+- GCS: Google Cloudのデフォルト認証(ADC)を使用する
+- S3: AWSのデフォルト認証チェーン(環境変数、`~/.aws/credentials`、IAMロール等)を使用する
+
+## 実行
+
+```bash
+node dist/cli.js --config config.yaml
+node dist/cli.js --config config.yaml --dry-run
+```

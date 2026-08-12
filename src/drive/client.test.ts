@@ -11,7 +11,7 @@ const { getClient, driveFactory, docsFactory, sheetsFactory } = vi.hoisted(
 );
 
 vi.mock("google-auth-library", () => ({
-  GoogleAuth: vi.fn(function (this: any) {
+  GoogleAuth: vi.fn(function (this: Record<string, unknown>) {
     this.getClient = getClient;
   }),
 }));
