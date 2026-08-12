@@ -9,15 +9,14 @@ function createFakeStorage() {
     exists: vi.fn().mockResolvedValue([true]),
     download: vi.fn().mockResolvedValue([Buffer.from("content")]),
   };
-  const bucket = vi
-    .fn()
-    .mockReturnValue({ file: vi.fn().mockReturnValue(file) });
-  return { storage: { bucket } as unknown as Storage, bucket, file };
+  const fileFn = vi.fn().mockReturnValue(file);
+  const bucket = vi.fn().mockReturnValue({ file: fileFn });
+  return { storage: { bucket } as unknown as Storage, bucket, fileFn, file };
 }
 
 describe("GcsStorageProvider", () => {
   it("uploads with the prefix applied", async () => {
-    const { storage, bucket, file } = createFakeStorage();
+    const { storage, bucket, fileFn, file } = createFakeStorage();
     const provider = new GcsStorageProvider(storage, "my-bucket", "backups");
 
     await provider.upload({
@@ -27,17 +26,19 @@ describe("GcsStorageProvider", () => {
     });
 
     expect(bucket).toHaveBeenCalledWith("my-bucket");
+    expect(fileFn).toHaveBeenCalledWith("backups/a.txt");
     expect(file.save).toHaveBeenCalledWith(Buffer.from("x"), {
       contentType: "text/plain",
     });
   });
 
   it("deletes with the prefix applied", async () => {
-    const { storage, file } = createFakeStorage();
+    const { storage, fileFn, file } = createFakeStorage();
     const provider = new GcsStorageProvider(storage, "my-bucket", "backups");
 
     await provider.delete("a.txt");
 
+    expect(fileFn).toHaveBeenCalledWith("backups/a.txt");
     expect(file.delete).toHaveBeenCalledWith({ ignoreNotFound: true });
   });
 
