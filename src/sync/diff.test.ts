@@ -111,4 +111,28 @@ describe("diffFiles", () => {
 
     expect(result.toUpload).toHaveLength(0);
   });
+
+  it("marks a previously synced file as toDelete when it now appears as excluded", () => {
+    const driveFiles = [
+      makeFile({ path: "slides.gslides", conversionKind: "excluded" }),
+    ];
+    const metadata: SyncMetadata = {
+      files: [
+        {
+          path: "slides.gslides",
+          sourcePath: "slides.gslides",
+          originUrl: "https://drive.google.com/open?id=id-3",
+          linkUrl: "https://drive.google.com/open?id=id-3",
+          modifiedTime: "2026-08-01T00:00:00.000Z",
+        },
+      ],
+      updatedAt: "2026-08-01T00:00:00.000Z",
+    };
+
+    const result = diffFiles(driveFiles, metadata);
+
+    expect(result.toDelete).toHaveLength(1);
+    expect(result.toDelete[0].path).toBe("slides.gslides");
+    expect(result.toUpload).toHaveLength(0);
+  });
 });
