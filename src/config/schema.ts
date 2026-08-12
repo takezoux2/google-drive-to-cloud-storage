@@ -14,7 +14,6 @@ export const mappingSchema = z.object({
 
 export const configSchema = z.object({
   mappings: z.array(mappingSchema).min(1),
-  concurrency: z.number().int().positive().optional(),
 });
 
 export type Destination = z.infer<typeof destinationSchema>;

@@ -26,7 +26,6 @@ mappings:
       provider: gcs
       bucket: "my-bucket"
       prefix: "backups"
-concurrency: 4
 `,
       "utf-8",
     );
@@ -36,12 +35,11 @@ concurrency: 4
     expect(config.mappings).toHaveLength(1);
     expect(config.mappings[0].driveFolderId).toBe("abc123");
     expect(config.mappings[0].destination.provider).toBe("gcs");
-    expect(config.concurrency).toBe(4);
   });
 
   it("throws when mappings is missing", async () => {
     const configPath = path.join(dir, "invalid.yaml");
-    await writeFile(configPath, "concurrency: 2\n", "utf-8");
+    await writeFile(configPath, "foo: bar\n", "utf-8");
 
     await expect(loadConfig(configPath)).rejects.toThrow();
   });

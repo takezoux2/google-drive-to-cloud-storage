@@ -97,8 +97,6 @@ mappings:
       bucket: "my-s3-bucket"
       region: "ap-northeast-1"
       prefix: "backups/team-b"
-
-concurrency: 4   # 並列ダウンロード/アップロード数。省略時デフォルト値を使用
 ```
 
 - `driveFolderId`ごとに1つの`destination`(コピー先バケット/プレフィックス)を対応させる
