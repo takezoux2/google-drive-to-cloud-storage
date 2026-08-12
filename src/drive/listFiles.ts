@@ -25,6 +25,8 @@ async function walk(
       q: `'${folderId}' in parents and trashed = false`,
       fields: "nextPageToken, files(id, name, mimeType, modifiedTime, parents)",
       pageToken,
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true,
     });
     const files = res.data.files ?? [];
     for (const file of files) {

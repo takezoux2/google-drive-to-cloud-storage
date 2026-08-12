@@ -53,4 +53,18 @@ describe("listFilesRecursively", () => {
     expect(result.find((f) => f.id === "file-2")?.path).toBe("sub/notes.txt");
     expect(result.find((f) => f.id === "file-2")?.conversionKind).toBe("copy");
   });
+
+  it("requests supportsAllDrives and includeItemsFromAllDrives so shared drive folders are included", async () => {
+    const list = vi.fn().mockResolvedValue({ data: { files: [] } });
+    const drive = { files: { list } } as unknown as drive_v3.Drive;
+
+    await listFilesRecursively(drive, "root");
+
+    expect(list).toHaveBeenCalledWith(
+      expect.objectContaining({
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true,
+      }),
+    );
+  });
 });
