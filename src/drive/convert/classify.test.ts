@@ -40,6 +40,14 @@ describe("classifyMimeType", () => {
     expect(classifyMimeType("image/heic")).toBe("image-convert-to-jpeg");
   });
 
+  it("converts heif to jpeg", () => {
+    expect(classifyMimeType("image/heif")).toBe("image-convert-to-jpeg");
+  });
+
+  it("copies text/* types not in the explicit whitelist as-is", () => {
+    expect(classifyMimeType("text/markdown")).toBe("copy");
+  });
+
   it("excludes unknown types", () => {
     expect(classifyMimeType("application/octet-stream")).toBe("excluded");
   });
