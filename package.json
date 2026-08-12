@@ -1,0 +1,41 @@
+{
+  "name": "google-drive-to-cloud-storage",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "bin": {
+    "gdrive-to-cloud-storage": "dist/cli.js"
+  },
+  "main": "dist/cli.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1108.0",
+    "@google-cloud/storage": "^7.22.0",
+    "commander": "^15.0.0",
+    "docs-markdown": "^1.2.0",
+    "google-auth-library": "^11.0.1",
+    "googleapis": "^174.0.1",
+    "sharp": "^0.35.3",
+    "yaml": "^2.9.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.8",
+    "@types/node": "^26.2.0",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
+}
