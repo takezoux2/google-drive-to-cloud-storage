@@ -338,6 +338,64 @@ describe("syncMapping", () => {
     ]);
   });
 
+  it("retains the metadata entry for a file whose delete fails, so it is retried next run", async () => {
+    class SelectiveDeleteFailingStorage extends FakeStorageProvider {
+      async delete(key: string): Promise<void> {
+        if (key === "removed.txt") {
+          throw new Error("delete failed");
+        }
+        await super.delete(key);
+      }
+    }
+    const storage = new SelectiveDeleteFailingStorage();
+    const removedEntry = {
+      path: "removed.txt",
+      sourcePath: "removed.txt",
+      originUrl: "https://drive.google.com/open?id=old",
+      linkUrl: "https://drive.google.com/open?id=old",
+      modifiedTime: "2026-08-01T00:00:00.000Z",
+    };
+    const existingMetadata: SyncMetadata = {
+      files: [
+        removedEntry,
+        {
+          path: "keep.txt",
+          sourcePath: "keep.txt",
+          originUrl: "https://drive.google.com/open?id=keep",
+          linkUrl: "https://drive.google.com/open?id=keep",
+          modifiedTime: "2026-08-01T00:00:00.000Z",
+        },
+      ],
+      updatedAt: "2026-08-01T00:00:00.000Z",
+    };
+    await storage.upload({
+      key: "metadata.json",
+      data: Buffer.from(JSON.stringify(existingMetadata)),
+      contentType: "application/json",
+    });
+    const keepFile: ClassifiedFile = {
+      id: "id-keep",
+      name: "keep.txt",
+      mimeType: "text/plain",
+      modifiedTime: "2026-08-01T00:00:00.000Z",
+      path: "keep.txt",
+      parents: [],
+      conversionKind: "copy",
+    };
+    listFilesRecursively.mockResolvedValue([keepFile]);
+
+    const result = await syncMapping("folder-id", fakeDeps(storage));
+
+    expect(result.failed).toEqual([
+      { sourcePath: "removed.txt", error: "delete failed" },
+    ]);
+
+    const metadata = JSON.parse(
+      storage.store.get("metadata.json")?.toString() ?? "{}",
+    ) as SyncMetadata;
+    expect(metadata.files).toContainEqual(removedEntry);
+  });
+
   it("records a writeMetadata failure in result.failed without throwing", async () => {
     class MetadataFailingStorage extends FakeStorageProvider {
       async upload(params: UploadParams): Promise<void> {

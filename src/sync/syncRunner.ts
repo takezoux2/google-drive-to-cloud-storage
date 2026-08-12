@@ -91,6 +91,7 @@ export async function syncMapping(
           sourcePath: entry.sourcePath,
           error: err instanceof Error ? err.message : String(err),
         });
+        entries.push(entry);
         continue;
       }
     }
