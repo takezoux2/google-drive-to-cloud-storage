@@ -478,4 +478,20 @@ describe("syncMapping", () => {
     ) as SyncMetadata;
     expect(metadataAfter.files).toHaveLength(2);
   });
+
+  it("passes the exclude config through to listFilesRecursively", async () => {
+    const storage = new FakeStorageProvider();
+    listFilesRecursively.mockResolvedValue([]);
+
+    await syncMapping("folder-id", fakeDeps(storage), {
+      fileIds: ["skip-me"],
+      namePatterns: ["^_"],
+    });
+
+    expect(listFilesRecursively).toHaveBeenCalledWith(
+      expect.anything(),
+      "folder-id",
+      { fileIds: ["skip-me"], namePatterns: ["^_"] },
+    );
+  });
 });

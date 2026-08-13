@@ -1,4 +1,5 @@
 import type { docs_v1, drive_v3, sheets_v4 } from "googleapis";
+import type { ExcludeConfig } from "../config/schema.js";
 import { convertFile } from "../drive/convert/dispatch.js";
 import { listFilesRecursively } from "../drive/listFiles.js";
 import type { StorageProvider } from "../storage/StorageProvider.js";
@@ -23,10 +24,11 @@ export interface SyncMappingResult {
 export async function syncMapping(
   driveFolderId: string,
   deps: SyncMappingDeps,
+  exclude?: ExcludeConfig,
 ): Promise<SyncMappingResult> {
   const result: SyncMappingResult = { uploaded: [], deleted: [], failed: [] };
 
-  const driveFiles = await listFilesRecursively(deps.drive, driveFolderId);
+  const driveFiles = await listFilesRecursively(deps.drive, driveFolderId, exclude);
   const metadata = await readMetadata(deps.storage);
 
   if (driveFiles.length === 0 && metadata.files.length > 0) {
