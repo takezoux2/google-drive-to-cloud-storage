@@ -37,6 +37,13 @@ gcloud auth application-default login \
   --scopes="openid,https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/drive.readonly,https://www.googleapis.com/auth/documents.readonly,https://www.googleapis.com/auth/spreadsheets.readonly"
 ```
 
+```powershell
+$env:GOOGLE_APPLICATION_CREDENTIALS = "./client_secret.json"
+gcloud auth application-default login `
+  --client-id-file=./client_secret.json `
+  --scopes="openid,https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/drive.readonly,https://www.googleapis.com/auth/documents.readonly,https://www.googleapis.com/auth/spreadsheets.readonly"
+```
+
 `gcs`宛先を使う場合は末尾に`,https://www.googleapis.com/auth/cloud-platform`を追加する。
 
 6. ブラウザで認可した自分のGoogleアカウントに、同期対象のGoogle Driveフォルダを閲覧者として共有しておく
@@ -45,9 +52,33 @@ gcloud auth application-default login \
 
 チームで同じ権限セットを再現したい場合や、`terraform/gcp`で作成済みのサービスアカウントと同じ権限で動作確認したい場合はこちらを使う。事前に自分のGoogleアカウントへ対象サービスアカウントの`roles/iam.serviceAccountTokenCreator`が付与されている必要がある。
 
+### terraformにおける権限を追加
+
+```terraform
+resource "google_service_account_iam_member" "local_impersonation" {
+  service_account_id = google_service_account.github_actions.name
+  role               = "roles/iam.serviceAccountTokenCreator"
+  member             = "user:${var.impersonator_email}"
+}
+```
+を追加し、サービスアカウントに権限を付与する
+
+
+### 実行コマンド
+
 ```bash
+export SERVICE_ACCOUNT_EMAIL=<SERVICE_ACCOUNT_EMAIL>
+
 gcloud auth application-default login \
-  --impersonate-service-account=<SERVICE_ACCOUNT_EMAIL> \
+  --impersonate-service-account="$SERVICE_ACCOUNT_EMAIL" \
+  --scopes="https://www.googleapis.com/auth/drive.readonly,https://www.googleapis.com/auth/documents.readonly,https://www.googleapis.com/auth/spreadsheets.readonly"
+```
+
+```powershell
+ $env:SERVICE_ACCOUNT_EMAIL = "<SERVICE_ACCOUNT_EMAIL>"
+
+gcloud auth application-default login `
+  --impersonate-service-account=$env:SERVICE_ACCOUNT_EMAIL `
   --scopes="https://www.googleapis.com/auth/drive.readonly,https://www.googleapis.com/auth/documents.readonly,https://www.googleapis.com/auth/spreadsheets.readonly"
 ```
 

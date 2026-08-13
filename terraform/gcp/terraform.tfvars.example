@@ -1,3 +1,5 @@
-project_id         = "my-gcp-project"
-github_repository  = "takezoux2/google-drive-to-cloud-storage"
-gcs_bucket_name    = "my-bucket"
+environment         = "dev"
+project_id          = "my-gcp-project"
+github_repository   = "takezoux2/google-drive-to-cloud-storage"
+gcs_bucket_name     = "my-bucket"
+impersonator_email  = "example@example.com"

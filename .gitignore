@@ -5,8 +5,10 @@ dist/
 
 # Terraform
 terraform/**/.terraform/
+terraform/**/terraform.tfstate.d/
 terraform/**/*.tfstate
 terraform/**/*.tfstate.*
-terraform/**/terraform.tfvars
+terraform/**/*.tfvars
+!terraform/**/*.tfvars.example
 terraform/**/.terraform.tfstate.lock.info
 terraform/**/crash.log

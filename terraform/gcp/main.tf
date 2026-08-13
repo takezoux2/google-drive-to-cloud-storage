@@ -7,6 +7,12 @@ locals {
     "docs.googleapis.com",
     "sheets.googleapis.com",
   ]
+
+  # Suffix with the environment so dev/prd resources don't collide when they
+  # happen to share the same GCP project.
+  pool_id            = "${var.pool_id}-${var.environment}"
+  provider_id        = "${var.provider_id}-${var.environment}"
+  service_account_id = "${var.service_account_id}-${var.environment}"
 }
 
 resource "google_project_service" "required" {
@@ -18,7 +24,7 @@ resource "google_project_service" "required" {
 }
 
 resource "google_iam_workload_identity_pool" "github_pool" {
-  workload_identity_pool_id = var.pool_id
+  workload_identity_pool_id = local.pool_id
   display_name              = "GitHub Actions(sync files)"
   description               = "Workload Identity Pool for GitHub Actions OIDC"
 
@@ -27,7 +33,7 @@ resource "google_iam_workload_identity_pool" "github_pool" {
 
 resource "google_iam_workload_identity_pool_provider" "github_provider" {
   workload_identity_pool_id          = google_iam_workload_identity_pool.github_pool.workload_identity_pool_id
-  workload_identity_pool_provider_id = var.provider_id
+  workload_identity_pool_provider_id = local.provider_id
   display_name                       = "GitHub Actions"
 
   attribute_mapping = {
@@ -45,7 +51,7 @@ resource "google_iam_workload_identity_pool_provider" "github_provider" {
 }
 
 resource "google_service_account" "github_actions" {
-  account_id   = var.service_account_id
+  account_id   = local.service_account_id
   display_name = "GitHub Actions (sync CLI)"
 }
 
