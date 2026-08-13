@@ -15,7 +15,9 @@ async function main(): Promise<void> {
   const options = program.opts<{ config: string; dryRun: boolean }>();
 
   const config = await loadConfig(options.config);
-  const { drive, docs, sheets } = await createGoogleClients();
+  const { drive, docs, sheets, authenticatedEmail } =
+    await createGoogleClients();
+  console.log(`Authenticated as: ${authenticatedEmail ?? "unavailable"}`);
 
   let hasFailure = false;
   for (const mapping of config.mappings) {
