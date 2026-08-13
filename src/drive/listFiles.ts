@@ -1,15 +1,35 @@
 import type { drive_v3 } from "googleapis";
+import type { ExcludeConfig } from "../config/schema.js";
 import type { ClassifiedFile } from "../types.js";
 import { classifyMimeType } from "./convert/classify.js";
 
 const FOLDER_MIME = "application/vnd.google-apps.folder";
 
+interface CompiledExclude {
+  fileIds: Set<string>;
+  namePatterns: RegExp[];
+}
+
+function compileExclude(exclude?: ExcludeConfig): CompiledExclude {
+  return {
+    fileIds: new Set(exclude?.fileIds ?? []),
+    namePatterns: (exclude?.namePatterns ?? []).map((p) => new RegExp(p)),
+  };
+}
+
+function isExcluded(compiled: CompiledExclude, id: string, name: string): boolean {
+  if (compiled.fileIds.has(id)) return true;
+  return compiled.namePatterns.some((re) => re.test(name));
+}
+
 export async function listFilesRecursively(
   drive: drive_v3.Drive,
   rootFolderId: string,
+  exclude?: ExcludeConfig,
 ): Promise<ClassifiedFile[]> {
   const result: ClassifiedFile[] = [];
-  await walk(drive, rootFolderId, "", result);
+  const compiled = compileExclude(exclude);
+  await walk(drive, rootFolderId, "", result, compiled);
   return result;
 }
 
@@ -18,6 +38,7 @@ async function walk(
   folderId: string,
   pathPrefix: string,
   result: ClassifiedFile[],
+  exclude: CompiledExclude,
 ): Promise<void> {
   let pageToken: string | undefined;
   do {
@@ -34,7 +55,8 @@ async function walk(
         continue;
       const path = pathPrefix ? `${pathPrefix}/${file.name}` : file.name;
       if (file.mimeType === FOLDER_MIME) {
-        await walk(drive, file.id, path, result);
+        if (isExcluded(exclude, file.id, file.name)) continue;
+        await walk(drive, file.id, path, result, exclude);
       } else {
         result.push({
           id: file.id,
@@ -43,7 +65,9 @@ async function walk(
           modifiedTime: file.modifiedTime,
           path,
           parents: file.parents ?? [],
-          conversionKind: classifyMimeType(file.mimeType),
+          conversionKind: isExcluded(exclude, file.id, file.name)
+            ? "excluded"
+            : classifyMimeType(file.mimeType),
         });
       }
     }
