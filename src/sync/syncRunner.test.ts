@@ -469,7 +469,7 @@ describe("syncMapping", () => {
       {
         sourcePath: "<all>",
         error:
-          "Drive listing returned 0 files but metadata has 2 tracked files; aborting to avoid mass deletion. If the folder is genuinely empty, delete metadata.json manually to confirm.",
+          'Drive listing returned 0 active files (after MIME-type/exclude filtering) but metadata has 2 tracked files; aborting to avoid mass deletion. If the folder is genuinely empty, or an "exclude" rule now matches everything, delete metadata.json manually to confirm.',
       },
     ]);
 
@@ -477,6 +477,102 @@ describe("syncMapping", () => {
       storage.store.get("metadata.json")?.toString() ?? "{}",
     ) as SyncMetadata;
     expect(metadataAfter.files).toHaveLength(2);
+  });
+
+  it("aborts without deleting anything when all Drive files are excluded but metadata has tracked files", async () => {
+    const storage = new FakeStorageProvider();
+    const existingMetadata: SyncMetadata = {
+      files: [
+        {
+          path: "a.txt",
+          sourcePath: "a.txt",
+          originUrl: "https://drive.google.com/open?id=a",
+          linkUrl: "https://drive.google.com/open?id=a",
+          modifiedTime: "2026-08-01T00:00:00.000Z",
+        },
+        {
+          path: "b.txt",
+          sourcePath: "b.txt",
+          originUrl: "https://drive.google.com/open?id=b",
+          linkUrl: "https://drive.google.com/open?id=b",
+          modifiedTime: "2026-08-01T00:00:00.000Z",
+        },
+      ],
+      updatedAt: "2026-08-01T00:00:00.000Z",
+    };
+    await storage.upload({
+      key: "metadata.json",
+      data: Buffer.from(JSON.stringify(existingMetadata)),
+      contentType: "application/json",
+    });
+    const excludedFile: ClassifiedFile = {
+      id: "id-excluded",
+      name: "a.txt",
+      mimeType: "text/plain",
+      modifiedTime: "2026-08-01T00:00:00.000Z",
+      path: "a.txt",
+      parents: [],
+      conversionKind: "excluded",
+    };
+    listFilesRecursively.mockResolvedValue([excludedFile]);
+
+    const result = await syncMapping("folder-id", fakeDeps(storage), {
+      namePatterns: ["."],
+    });
+
+    expect(result.deleted).toEqual([]);
+    expect(result.uploaded).toEqual([]);
+    expect(storage.deleteCalls).toEqual([]);
+    expect(result.failed).toEqual([
+      {
+        sourcePath: "<all>",
+        error:
+          'Drive listing returned 0 active files (after MIME-type/exclude filtering) but metadata has 2 tracked files; aborting to avoid mass deletion. If the folder is genuinely empty, or an "exclude" rule now matches everything, delete metadata.json manually to confirm.',
+      },
+    ]);
+    expect(result.excluded).toEqual(["a.txt"]);
+
+    const metadataAfter = JSON.parse(
+      storage.store.get("metadata.json")?.toString() ?? "{}",
+    ) as SyncMetadata;
+    expect(metadataAfter.files).toHaveLength(2);
+  });
+
+  it("reports excluded file paths alongside active uploads", async () => {
+    const storage = new FakeStorageProvider();
+    const activeFile: ClassifiedFile = {
+      id: "id-active",
+      name: "report",
+      mimeType: "application/vnd.google-apps.document",
+      modifiedTime: "2026-08-01T00:00:00.000Z",
+      path: "report",
+      parents: [],
+      conversionKind: "google-doc-to-markdown",
+    };
+    const excludedFile: ClassifiedFile = {
+      id: "id-excluded",
+      name: "secret.txt",
+      mimeType: "text/plain",
+      modifiedTime: "2026-08-01T00:00:00.000Z",
+      path: "secret.txt",
+      parents: [],
+      conversionKind: "excluded",
+    };
+    listFilesRecursively.mockResolvedValue([activeFile, excludedFile]);
+    convertFile.mockResolvedValue([
+      {
+        outputPath: "report.md",
+        data: Buffer.from("# R"),
+        contentType: "text/markdown",
+      },
+    ]);
+
+    const result = await syncMapping("folder-id", fakeDeps(storage), {
+      namePatterns: ["^secret"],
+    });
+
+    expect(result.excluded).toEqual(["secret.txt"]);
+    expect(result.uploaded).toEqual(["report.md"]);
   });
 
   it("passes the exclude config through to listFilesRecursively", async () => {

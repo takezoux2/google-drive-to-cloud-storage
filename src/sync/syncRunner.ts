@@ -19,6 +19,7 @@ export interface SyncMappingResult {
   uploaded: string[];
   deleted: string[];
   failed: { sourcePath: string; error: string }[];
+  excluded: string[];
 }
 
 export async function syncMapping(
@@ -26,15 +27,31 @@ export async function syncMapping(
   deps: SyncMappingDeps,
   exclude?: ExcludeConfig,
 ): Promise<SyncMappingResult> {
-  const result: SyncMappingResult = { uploaded: [], deleted: [], failed: [] };
+  const result: SyncMappingResult = {
+    uploaded: [],
+    deleted: [],
+    failed: [],
+    excluded: [],
+  };
 
-  const driveFiles = await listFilesRecursively(deps.drive, driveFolderId, exclude);
+  const driveFiles = await listFilesRecursively(
+    deps.drive,
+    driveFolderId,
+    exclude,
+  );
   const metadata = await readMetadata(deps.storage);
 
-  if (driveFiles.length === 0 && metadata.files.length > 0) {
+  result.excluded = driveFiles
+    .filter((f) => f.conversionKind === "excluded")
+    .map((f) => f.path);
+
+  const activeFileCount = driveFiles.filter(
+    (f) => f.conversionKind !== "excluded",
+  ).length;
+  if (activeFileCount === 0 && metadata.files.length > 0) {
     result.failed.push({
       sourcePath: "<all>",
-      error: `Drive listing returned 0 files but metadata has ${metadata.files.length} tracked files; aborting to avoid mass deletion. If the folder is genuinely empty, delete metadata.json manually to confirm.`,
+      error: `Drive listing returned 0 active files (after MIME-type/exclude filtering) but metadata has ${metadata.files.length} tracked files; aborting to avoid mass deletion. If the folder is genuinely empty, or an "exclude" rule now matches everything, delete metadata.json manually to confirm.`,
     });
     return result;
   }

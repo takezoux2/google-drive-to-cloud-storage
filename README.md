@@ -81,6 +81,8 @@ mappings:
 
 `exclude`は省略可能。`fileIds`はDrive上のファイル/フォルダIDの完全一致リスト、`namePatterns`はファイル/フォルダ名(パスではなく名前のみ)にマッチする正規表現のリスト。フォルダがマッチした場合はその配下ごと同期対象から除外され、ファイルがマッチした場合はそのファイル単体が除外される(他のMIME種別による除外と同じ扱い)。
 
+`exclude`に追加した時点で既にコピー先に同期済みのファイルがある場合、次回の同期実行時にそのコピーはコピー先から削除される(MIME種別による除外と同じ挙動)。適用前に`--dry-run`で削除対象を確認することを推奨する。
+
 ## 認証
 
 - Google Drive: ADC(Application Default Credentials)で取得したサービスアカウントを使用する。事前に`gcloud auth application-default login`、または`GOOGLE_APPLICATION_CREDENTIALS`環境変数でサービスアカウントキーを指定する

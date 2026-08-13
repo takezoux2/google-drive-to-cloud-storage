@@ -35,7 +35,7 @@ async function main(): Promise<void> {
     );
 
     console.log(
-      `[${mapping.driveFolderId}] uploaded=${result.uploaded.length} deleted=${result.deleted.length} failed=${result.failed.length}`,
+      `[${mapping.driveFolderId}] uploaded=${result.uploaded.length} deleted=${result.deleted.length} excluded=${result.excluded.length} failed=${result.failed.length}`,
     );
     for (const failure of result.failed) {
       console.error(`  FAILED ${failure.sourcePath}: ${failure.error}`);

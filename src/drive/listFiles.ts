@@ -17,7 +17,11 @@ function compileExclude(exclude?: ExcludeConfig): CompiledExclude {
   };
 }
 
-function isExcluded(compiled: CompiledExclude, id: string, name: string): boolean {
+function isExcluded(
+  compiled: CompiledExclude,
+  id: string,
+  name: string,
+): boolean {
   if (compiled.fileIds.has(id)) return true;
   return compiled.namePatterns.some((re) => re.test(name));
 }
