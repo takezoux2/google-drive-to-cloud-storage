@@ -80,4 +80,27 @@ describe("LocalStorageProvider", () => {
 
     expect(result).toBeUndefined();
   });
+
+  it("rejects an upload whose key escapes the destination directory", async () => {
+    const provider = new LocalStorageProvider(dir);
+
+    await expect(
+      provider.upload({
+        key: "../escape.txt",
+        data: Buffer.from("x"),
+        contentType: "text/plain",
+      }),
+    ).rejects.toThrow(/escapes the destination directory/);
+
+    const escapedPath = path.join(dir, "..", "escape.txt");
+    await expect(readFile(escapedPath)).rejects.toThrow();
+  });
+
+  it("rejects a delete whose key escapes the destination directory", async () => {
+    const provider = new LocalStorageProvider(dir);
+
+    await expect(provider.delete("../escape.txt")).rejects.toThrow(
+      /escapes the destination directory/,
+    );
+  });
 });

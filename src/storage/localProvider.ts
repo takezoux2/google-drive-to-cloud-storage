@@ -9,7 +9,12 @@ export class LocalStorageProvider implements StorageProvider {
   ) {}
 
   private resolveKey(key: string): string {
-    return path.join(this.basePath, this.prefix, key);
+    const root = path.resolve(this.basePath, this.prefix);
+    const resolved = path.resolve(root, key);
+    if (resolved !== root && !resolved.startsWith(root + path.sep)) {
+      throw new Error(`key escapes the destination directory: ${key}`);
+    }
+    return resolved;
   }
 
   async upload({ key, data }: UploadParams): Promise<void> {
