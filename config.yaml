@@ -1,0 +1,6 @@
+mapping:
+  - driveFolderId: "1n8FX9B0sfIsRys2LmppqY5idkIXqtydI"
+    destination:
+      provider: "local"
+      path: "./backups/a"
+      prefix: "docs"
