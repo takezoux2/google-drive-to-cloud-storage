@@ -96,4 +96,72 @@ mappings:
 
     await expect(loadConfig(configPath)).rejects.toThrow();
   });
+
+  it("parses a mapping with exclude fileIds and namePatterns", async () => {
+    const configPath = path.join(dir, "exclude.yaml");
+    await writeFile(
+      configPath,
+      `
+mappings:
+  - driveFolderId: "abc123"
+    destination:
+      provider: gcs
+      bucket: "my-bucket"
+    exclude:
+      fileIds:
+        - "excluded-id-1"
+      namePatterns:
+        - "^_.*"
+        - "\\\\.tmp$"
+`,
+      "utf-8",
+    );
+
+    const config = await loadConfig(configPath);
+
+    expect(config.mappings[0].exclude?.fileIds).toEqual(["excluded-id-1"]);
+    expect(config.mappings[0].exclude?.namePatterns).toEqual([
+      "^_.*",
+      "\\.tmp$",
+    ]);
+  });
+
+  it("parses a mapping with no exclude block (backward compatible)", async () => {
+    const configPath = path.join(dir, "no-exclude.yaml");
+    await writeFile(
+      configPath,
+      `
+mappings:
+  - driveFolderId: "abc123"
+    destination:
+      provider: gcs
+      bucket: "my-bucket"
+`,
+      "utf-8",
+    );
+
+    const config = await loadConfig(configPath);
+
+    expect(config.mappings[0].exclude).toBeUndefined();
+  });
+
+  it("throws when a namePattern is not a valid regular expression", async () => {
+    const configPath = path.join(dir, "bad-regex.yaml");
+    await writeFile(
+      configPath,
+      `
+mappings:
+  - driveFolderId: "abc123"
+    destination:
+      provider: gcs
+      bucket: "my-bucket"
+    exclude:
+      namePatterns:
+        - "["
+`,
+      "utf-8",
+    );
+
+    await expect(loadConfig(configPath)).rejects.toThrow();
+  });
 });

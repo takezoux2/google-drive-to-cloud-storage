@@ -26,9 +26,29 @@ export const destinationSchema = z
     }
   });
 
+export const excludeSchema = z
+  .object({
+    fileIds: z.array(z.string().min(1)).optional(),
+    namePatterns: z.array(z.string().min(1)).optional(),
+  })
+  .superRefine((data, ctx) => {
+    data.namePatterns?.forEach((pattern, i) => {
+      try {
+        new RegExp(pattern);
+      } catch {
+        ctx.addIssue({
+          code: "custom",
+          message: `invalid regular expression: ${pattern}`,
+          path: ["namePatterns", i],
+        });
+      }
+    });
+  });
+
 export const mappingSchema = z.object({
   driveFolderId: z.string().min(1),
   destination: destinationSchema,
+  exclude: excludeSchema.optional(),
 });
 
 export const configSchema = z.object({
@@ -36,5 +56,6 @@ export const configSchema = z.object({
 });
 
 export type Destination = z.infer<typeof destinationSchema>;
+export type ExcludeConfig = z.infer<typeof excludeSchema>;
 export type Mapping = z.infer<typeof mappingSchema>;
 export type AppConfig = z.infer<typeof configSchema>;
