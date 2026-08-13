@@ -1,4 +1,4 @@
-mapping:
+mappings:
   - driveFolderId: "1n8FX9B0sfIsRys2LmppqY5idkIXqtydI"
     destination:
       provider: "local"

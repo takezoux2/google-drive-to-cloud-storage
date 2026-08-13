@@ -3,6 +3,9 @@ locals {
     "iam.googleapis.com",
     "iamcredentials.googleapis.com",
     "sts.googleapis.com",
+    "drive.googleapis.com",
+    "docs.googleapis.com",
+    "sheets.googleapis.com",
   ]
 }
 
@@ -16,7 +19,7 @@ resource "google_project_service" "required" {
 
 resource "google_iam_workload_identity_pool" "github_pool" {
   workload_identity_pool_id = var.pool_id
-  display_name              = "GitHub Actions"
+  display_name              = "GitHub Actions(sync files)"
   description               = "Workload Identity Pool for GitHub Actions OIDC"
 
   depends_on = [google_project_service.required]
