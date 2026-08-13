@@ -22,13 +22,17 @@ async function main(): Promise<void> {
   let hasFailure = false;
   for (const mapping of config.mappings) {
     const storage = createStorageProvider(mapping.destination);
-    const result = await syncMapping(mapping.driveFolderId, {
-      drive,
-      docs,
-      sheets,
-      storage,
-      dryRun: options.dryRun,
-    });
+    const result = await syncMapping(
+      mapping.driveFolderId,
+      {
+        drive,
+        docs,
+        sheets,
+        storage,
+        dryRun: options.dryRun,
+      },
+      mapping.exclude,
+    );
 
     console.log(
       `[${mapping.driveFolderId}] uploaded=${result.uploaded.length} deleted=${result.deleted.length} failed=${result.failed.length}`,

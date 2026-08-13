@@ -56,6 +56,12 @@ mappings:
       provider: gcs
       bucket: "my-bucket"
       prefix: "backups/team-a"
+    exclude:
+      fileIds:
+        - "1ExcludedFolderOrFileId"
+      namePatterns:
+        - "^_.*"
+        - "\\.tmp$"
 
   - driveFolderId: "2XyZ..."
     destination:
@@ -72,6 +78,8 @@ mappings:
 ```
 
 `provider: local`の場合は`bucket`の代わりに`path`(保存先ディレクトリ)を指定する。ディレクトリが存在しない場合は自動作成される。
+
+`exclude`は省略可能。`fileIds`はDrive上のファイル/フォルダIDの完全一致リスト、`namePatterns`はファイル/フォルダ名(パスではなく名前のみ)にマッチする正規表現のリスト。フォルダがマッチした場合はその配下ごと同期対象から除外され、ファイルがマッチした場合はそのファイル単体が除外される(他のMIME種別による除外と同じ扱い)。
 
 ## 認証
 
