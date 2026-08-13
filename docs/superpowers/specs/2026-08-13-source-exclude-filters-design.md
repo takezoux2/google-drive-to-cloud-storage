@@ -81,16 +81,13 @@ export const mappingSchema = z.object({
 
 不正な正規表現は設定読み込み時(`loadConfig`)にエラーとなり、Drive APIを呼ぶ前に検出できる。
 
-### 型(`src/types.ts`)
+### 型(`src/config/schema.ts`)
 
 ```ts
-export interface ExcludeConfig {
-  fileIds: string[];
-  namePatterns: string[];
-}
+export type ExcludeConfig = z.infer<typeof excludeSchema>;
 ```
 
-(`schema.ts`側の`z.infer`ではなく、`listFiles.ts`が受け取る正規化済みの形として定義。`fileIds`/`namePatterns`はどちらも未指定なら空配列として渡す)
+(実装では`types.ts`に別途正規化済みの型を定義せず、`schema.ts`の`z.infer`型を`listFiles.ts`・`syncRunner.ts`・`cli.ts`で共通利用する形にした。理由の詳細は実装計画のGlobal Constraintsを参照)
 
 ### 除外ロジック(`src/drive/listFiles.ts`)
 
@@ -106,7 +103,7 @@ export async function listFilesRecursively(
 - `isExcluded(id, name)`ヘルパーで判定: `fileIdSet.has(id) || patterns.some((re) => re.test(name))`
 - `walk()`内、各Driveアイテムを処理する際:
   - **フォルダ**かつ`isExcluded`→ `walk()`を呼ばずスキップ(配下は一切走査しない)
-  - **ファイル**かつ`isExcluded`→ 結果配列には追加するが、`classifyMimeType`を呼ばず`conversionKind: "excluded"`を設定する(既存のMIME種別除外と同じ扱いとなり、`syncRunner`側の「Skipped: path (excluded)」ログ・diffによる旧ファイル削除がそのまま機能する)
+  - **ファイル**かつ`isExcluded`→ 結果配列には追加するが、`classifyMimeType`を呼ばず`conversionKind: "excluded"`を設定する(既存のMIME種別除外と同じ扱いとなり、`diff.ts`による旧ファイル削除がそのまま機能する。実装時点の`syncRunner`にファイル単位のログ出力は存在しないため、可視化は`SyncMappingResult.excluded`とCLIサマリ行の`excluded=`カウントとして別途追加した)
   - それ以外は既存の挙動のまま
 
 ### syncRunner / cli の配線
