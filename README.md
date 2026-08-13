@@ -63,7 +63,15 @@ mappings:
       bucket: "my-s3-bucket"
       region: "ap-northeast-1"
       prefix: "backups/team-b"
+
+  - driveFolderId: "3PqRsTuVwXyZ..."
+    destination:
+      provider: local
+      path: "./backups/team-c"
+      prefix: "docs"
 ```
+
+`provider: local`の場合は`bucket`の代わりに`path`(保存先ディレクトリ)を指定する。ディレクトリが存在しない場合は自動作成される。
 
 ## 認証
 
