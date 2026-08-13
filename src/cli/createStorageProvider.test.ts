@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GcsStorageProvider } from "../storage/gcsProvider.js";
+import { LocalStorageProvider } from "../storage/localProvider.js";
 import { S3StorageProvider } from "../storage/s3Provider.js";
 import { createStorageProvider } from "./createStorageProvider.js";
 
@@ -22,5 +23,15 @@ describe("createStorageProvider", () => {
     });
 
     expect(provider).toBeInstanceOf(S3StorageProvider);
+  });
+
+  it("creates a LocalStorageProvider for provider: local", () => {
+    const provider = createStorageProvider({
+      provider: "local",
+      path: "/tmp/some-dir",
+      prefix: "p",
+    });
+
+    expect(provider).toBeInstanceOf(LocalStorageProvider);
   });
 });
