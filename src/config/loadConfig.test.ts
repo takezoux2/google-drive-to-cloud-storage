@@ -228,4 +228,90 @@ mappings:
 
     await expect(loadConfig(configPath)).rejects.toThrow();
   });
+
+  it("parses config-level rename rules", async () => {
+    const configPath = path.join(dir, "rename.yaml");
+    await writeFile(
+      configPath,
+      `
+rename:
+  - from: "photo"
+    to: "cover"
+  - from: "old_report.pdf"
+    to: "report_2024.pdf"
+mappings:
+  - driveFolderId: "abc123"
+    destination:
+      provider: gcs
+      bucket: "my-bucket"
+`,
+      "utf-8",
+    );
+
+    const config = await loadConfig(configPath);
+
+    expect(config.rename).toEqual([
+      { from: "photo", to: "cover" },
+      { from: "old_report.pdf", to: "report_2024.pdf" },
+    ]);
+  });
+
+  it("parses a config with no rename block (backward compatible)", async () => {
+    const configPath = path.join(dir, "no-rename.yaml");
+    await writeFile(
+      configPath,
+      `
+mappings:
+  - driveFolderId: "abc123"
+    destination:
+      provider: gcs
+      bucket: "my-bucket"
+`,
+      "utf-8",
+    );
+
+    const config = await loadConfig(configPath);
+
+    expect(config.rename).toBeUndefined();
+  });
+
+  it("throws when a rename rule has an empty from", async () => {
+    const configPath = path.join(dir, "rename-empty-from.yaml");
+    await writeFile(
+      configPath,
+      `
+rename:
+  - from: ""
+    to: "cover"
+mappings:
+  - driveFolderId: "abc123"
+    destination:
+      provider: gcs
+      bucket: "my-bucket"
+`,
+      "utf-8",
+    );
+
+    await expect(loadConfig(configPath)).rejects.toThrow();
+  });
+
+  it("throws when a rename rule has an empty to", async () => {
+    const configPath = path.join(dir, "rename-empty-to.yaml");
+    await writeFile(
+      configPath,
+      `
+rename:
+  - from: "photo"
+    to: ""
+mappings:
+  - driveFolderId: "abc123"
+    destination:
+      provider: gcs
+      bucket: "my-bucket"
+`,
+      "utf-8",
+    );
+
+    await expect(loadConfig(configPath)).rejects.toThrow();
+  });
 });

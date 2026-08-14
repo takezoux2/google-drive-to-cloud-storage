@@ -64,6 +64,11 @@ export const includeSchema = z
     });
   });
 
+export const renameRuleSchema = z.object({
+  from: z.string().min(1),
+  to: z.string().min(1),
+});
+
 export const mappingSchema = z.object({
   driveFolderId: z.string().min(1),
   destination: destinationSchema,
@@ -73,10 +78,12 @@ export const mappingSchema = z.object({
 
 export const configSchema = z.object({
   mappings: z.array(mappingSchema).min(1),
+  rename: z.array(renameRuleSchema).optional(),
 });
 
 export type Destination = z.infer<typeof destinationSchema>;
 export type ExcludeConfig = z.infer<typeof excludeSchema>;
 export type IncludeConfig = z.infer<typeof includeSchema>;
+export type RenameRule = z.infer<typeof renameRuleSchema>;
 export type Mapping = z.infer<typeof mappingSchema>;
 export type AppConfig = z.infer<typeof configSchema>;
