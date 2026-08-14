@@ -33,6 +33,7 @@ async function main(): Promise<void> {
       },
       mapping.exclude,
       mapping.include,
+      config.rename,
     );
 
     console.log(
