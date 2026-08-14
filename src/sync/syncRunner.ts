@@ -1,5 +1,9 @@
 import type { docs_v1, drive_v3, sheets_v4 } from "googleapis";
-import type { ExcludeConfig, IncludeConfig, RenameRule } from "../config/schema.js";
+import type {
+  ExcludeConfig,
+  IncludeConfig,
+  RenameRule,
+} from "../config/schema.js";
 import { convertFile } from "../drive/convert/dispatch.js";
 import { listFilesRecursively } from "../drive/listFiles.js";
 import type { StorageProvider } from "../storage/StorageProvider.js";
@@ -65,7 +69,8 @@ export async function syncMapping(
   const toUploadPaths = new Set(toUpload.map((f) => f.path));
   for (const file of driveFiles) {
     if (toUploadPaths.has(file.path)) continue;
-    const reason = file.conversionKind === "excluded" ? "excluded" : "up to date";
+    const reason =
+      file.conversionKind === "excluded" ? "excluded" : "up to date";
     console.log(`Skipped: ${file.path} (${reason})`);
   }
 

@@ -63,7 +63,11 @@ function isExcluded(
   return compiled.namePatterns.some((re) => re.test(name));
 }
 
-function isIncluded(compiled: CompiledInclude, id: string, name: string): boolean {
+function isIncluded(
+  compiled: CompiledInclude,
+  id: string,
+  name: string,
+): boolean {
   if (!compiled.active) return true;
   if (compiled.fileIds.has(id)) return true;
   return compiled.namePatterns.some((re) => re.test(name));
@@ -71,7 +75,9 @@ function isIncluded(compiled: CompiledInclude, id: string, name: string): boolea
 
 function splitExt(name: string): { base: string; ext: string } {
   const ext = extname(name);
-  return ext ? { base: name.slice(0, -ext.length), ext } : { base: name, ext: "" };
+  return ext
+    ? { base: name.slice(0, -ext.length), ext }
+    : { base: name, ext: "" };
 }
 
 function applyRename(rules: CompiledRenameRule[], name: string): string {

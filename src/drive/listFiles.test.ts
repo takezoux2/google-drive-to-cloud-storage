@@ -625,6 +625,35 @@ describe("listFilesRecursively", () => {
     expect(result.find((f) => f.id === "file-photo")?.path).toBe("cover.jpg");
   });
 
+  it("treats a name with no path.extname() extension (e.g. .gitignore) as extension-less for matching", async () => {
+    const list = vi.fn().mockResolvedValue({
+      data: {
+        files: [
+          {
+            id: "file-dotfile",
+            name: ".gitignore",
+            mimeType: "text/plain",
+            modifiedTime: "2026-08-01T00:00:00.000Z",
+            parents: ["root"],
+          },
+        ],
+      },
+    });
+    const drive = { files: { list } } as unknown as drive_v3.Drive;
+
+    const result = await listFilesRecursively(
+      drive,
+      "root",
+      undefined,
+      undefined,
+      [{ from: ".gitignore", to: "ignore-rules" }],
+    );
+
+    expect(result.find((f) => f.id === "file-dotfile")?.path).toBe(
+      "ignore-rules",
+    );
+  });
+
   it("behaves exactly as before when rename is omitted", async () => {
     const list = vi.fn().mockResolvedValue({
       data: {

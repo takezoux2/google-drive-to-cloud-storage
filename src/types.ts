@@ -7,6 +7,7 @@ export type ConversionKind =
 
 export interface DriveFileInfo {
   id: string;
+  /** Rename-applied output name, not necessarily the original Drive file name — see `applyRename` in `listFiles.ts`. */
   name: string;
   mimeType: string;
   modifiedTime: string;

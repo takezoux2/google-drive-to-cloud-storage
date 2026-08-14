@@ -631,4 +631,36 @@ describe("syncMapping", () => {
       [{ from: "photo", to: "cover" }],
     );
   });
+
+  it("uploads a file to the correct destination key when listFilesRecursively already returned a renamed path", async () => {
+    const storage = new FakeStorageProvider();
+    const renamedFile: ClassifiedFile = {
+      id: "id-renamed",
+      name: "cover",
+      mimeType: "application/vnd.google-apps.document",
+      modifiedTime: "2026-08-01T00:00:00.000Z",
+      path: "cover",
+      parents: [],
+      conversionKind: "google-doc-to-markdown",
+    };
+    listFilesRecursively.mockResolvedValue([renamedFile]);
+    convertFile.mockResolvedValue([
+      {
+        outputPath: "cover.md",
+        data: Buffer.from("# Cover"),
+        contentType: "text/markdown",
+      },
+    ]);
+
+    const result = await syncMapping(
+      "folder-id",
+      fakeDeps(storage),
+      undefined,
+      undefined,
+      [{ from: "photo", to: "cover" }],
+    );
+
+    expect(result.uploaded).toContain("cover.md");
+    expect(storage.store.get("cover.md")?.toString()).toBe("# Cover");
+  });
 });
