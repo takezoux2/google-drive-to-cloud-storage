@@ -589,6 +589,7 @@ describe("syncMapping", () => {
       "folder-id",
       { fileIds: ["skip-me"], namePatterns: ["^_"] },
       undefined,
+      undefined,
     );
   });
 
@@ -606,6 +607,28 @@ describe("syncMapping", () => {
       "folder-id",
       undefined,
       { fileIds: ["keep-me"], namePatterns: ["\\.pdf$"] },
+      undefined,
+    );
+  });
+
+  it("passes the rename config through to listFilesRecursively", async () => {
+    const storage = new FakeStorageProvider();
+    listFilesRecursively.mockResolvedValue([]);
+
+    await syncMapping(
+      "folder-id",
+      fakeDeps(storage),
+      undefined,
+      undefined,
+      [{ from: "photo", to: "cover" }],
+    );
+
+    expect(listFilesRecursively).toHaveBeenCalledWith(
+      expect.anything(),
+      "folder-id",
+      undefined,
+      undefined,
+      [{ from: "photo", to: "cover" }],
     );
   });
 });
