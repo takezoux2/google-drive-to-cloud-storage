@@ -378,4 +378,271 @@ describe("listFilesRecursively", () => {
     expect(result).toHaveLength(1);
     expect(result[0].conversionKind).toBe("copy");
   });
+
+  it("renames a file whose base name matches an extension-less from rule, keeping the original extension", async () => {
+    const list = vi.fn().mockResolvedValue({
+      data: {
+        files: [
+          {
+            id: "file-photo",
+            name: "photo.jpg",
+            mimeType: "image/jpeg",
+            modifiedTime: "2026-08-01T00:00:00.000Z",
+            parents: ["root"],
+          },
+        ],
+      },
+    });
+    const drive = { files: { list } } as unknown as drive_v3.Drive;
+
+    const result = await listFilesRecursively(
+      drive,
+      "root",
+      undefined,
+      undefined,
+      [{ from: "photo", to: "cover" }],
+    );
+
+    expect(result.find((f) => f.id === "file-photo")?.path).toBe("cover.jpg");
+    expect(result.find((f) => f.id === "file-photo")?.name).toBe("cover.jpg");
+  });
+
+  it("does not rename a file when from has an extension that does not match", async () => {
+    const list = vi.fn().mockResolvedValue({
+      data: {
+        files: [
+          {
+            id: "file-photo",
+            name: "photo.png",
+            mimeType: "image/png",
+            modifiedTime: "2026-08-01T00:00:00.000Z",
+            parents: ["root"],
+          },
+        ],
+      },
+    });
+    const drive = { files: { list } } as unknown as drive_v3.Drive;
+
+    const result = await listFilesRecursively(
+      drive,
+      "root",
+      undefined,
+      undefined,
+      [{ from: "photo.jpg", to: "cover.jpg" }],
+    );
+
+    expect(result.find((f) => f.id === "file-photo")?.path).toBe("photo.png");
+  });
+
+  it("renames a file when from has an extension that matches exactly", async () => {
+    const list = vi.fn().mockResolvedValue({
+      data: {
+        files: [
+          {
+            id: "file-report",
+            name: "old_report.pdf",
+            mimeType: "application/pdf",
+            modifiedTime: "2026-08-01T00:00:00.000Z",
+            parents: ["root"],
+          },
+        ],
+      },
+    });
+    const drive = { files: { list } } as unknown as drive_v3.Drive;
+
+    const result = await listFilesRecursively(
+      drive,
+      "root",
+      undefined,
+      undefined,
+      [{ from: "old_report.pdf", to: "report_2024.pdf" }],
+    );
+
+    expect(result.find((f) => f.id === "file-report")?.path).toBe(
+      "report_2024.pdf",
+    );
+  });
+
+  it("uses to verbatim as the output name when to has an extension", async () => {
+    const list = vi.fn().mockResolvedValue({
+      data: {
+        files: [
+          {
+            id: "file-photo",
+            name: "photo.webp",
+            mimeType: "image/webp",
+            modifiedTime: "2026-08-01T00:00:00.000Z",
+            parents: ["root"],
+          },
+        ],
+      },
+    });
+    const drive = { files: { list } } as unknown as drive_v3.Drive;
+
+    const result = await listFilesRecursively(
+      drive,
+      "root",
+      undefined,
+      undefined,
+      [{ from: "photo", to: "cover.jpg" }],
+    );
+
+    expect(result.find((f) => f.id === "file-photo")?.path).toBe("cover.jpg");
+  });
+
+  it("keeps a file without an extension unrenamed-in-extension when to has no extension (e.g. Google Docs)", async () => {
+    const list = vi.fn().mockResolvedValue({
+      data: {
+        files: [
+          {
+            id: "file-doc",
+            name: "Meeting Notes",
+            mimeType: "application/vnd.google-apps.document",
+            modifiedTime: "2026-08-01T00:00:00.000Z",
+            parents: ["root"],
+          },
+        ],
+      },
+    });
+    const drive = { files: { list } } as unknown as drive_v3.Drive;
+
+    const result = await listFilesRecursively(
+      drive,
+      "root",
+      undefined,
+      undefined,
+      [{ from: "Meeting Notes", to: "Notes" }],
+    );
+
+    expect(result.find((f) => f.id === "file-doc")?.path).toBe("Notes");
+  });
+
+  it("applies only the first matching rename rule when multiple rules could match", async () => {
+    const list = vi.fn().mockResolvedValue({
+      data: {
+        files: [
+          {
+            id: "file-photo",
+            name: "photo.jpg",
+            mimeType: "image/jpeg",
+            modifiedTime: "2026-08-01T00:00:00.000Z",
+            parents: ["root"],
+          },
+        ],
+      },
+    });
+    const drive = { files: { list } } as unknown as drive_v3.Drive;
+
+    const result = await listFilesRecursively(
+      drive,
+      "root",
+      undefined,
+      undefined,
+      [
+        { from: "photo", to: "first-match" },
+        { from: "photo", to: "second-match" },
+      ],
+    );
+
+    expect(result.find((f) => f.id === "file-photo")?.path).toBe(
+      "first-match.jpg",
+    );
+  });
+
+  it("does not rename folders even when a folder name matches a rename rule", async () => {
+    const list = vi.fn().mockImplementation(({ q }: { q: string }) => {
+      if (q.includes("'root'")) {
+        return Promise.resolve({
+          data: {
+            files: [
+              {
+                id: "folder-photo",
+                name: "photo",
+                mimeType: "application/vnd.google-apps.folder",
+                modifiedTime: "2026-08-01T00:00:00.000Z",
+                parents: ["root"],
+              },
+            ],
+          },
+        });
+      }
+      return Promise.resolve({
+        data: {
+          files: [
+            {
+              id: "file-inside",
+              name: "inside.txt",
+              mimeType: "text/plain",
+              modifiedTime: "2026-08-01T00:00:00.000Z",
+              parents: ["folder-photo"],
+            },
+          ],
+        },
+      });
+    });
+    const drive = { files: { list } } as unknown as drive_v3.Drive;
+
+    const result = await listFilesRecursively(
+      drive,
+      "root",
+      undefined,
+      undefined,
+      [{ from: "photo", to: "cover" }],
+    );
+
+    expect(result.find((f) => f.id === "file-inside")?.path).toBe(
+      "photo/inside.txt",
+    );
+  });
+
+  it("evaluates exclude/include against the original file name, not the renamed name", async () => {
+    const list = vi.fn().mockResolvedValue({
+      data: {
+        files: [
+          {
+            id: "file-photo",
+            name: "photo.jpg",
+            mimeType: "image/jpeg",
+            modifiedTime: "2026-08-01T00:00:00.000Z",
+            parents: ["root"],
+          },
+        ],
+      },
+    });
+    const drive = { files: { list } } as unknown as drive_v3.Drive;
+
+    const result = await listFilesRecursively(
+      drive,
+      "root",
+      { namePatterns: ["^photo"] },
+      undefined,
+      [{ from: "photo", to: "cover" }],
+    );
+
+    expect(result.find((f) => f.id === "file-photo")?.conversionKind).toBe(
+      "excluded",
+    );
+    expect(result.find((f) => f.id === "file-photo")?.path).toBe("cover.jpg");
+  });
+
+  it("behaves exactly as before when rename is omitted", async () => {
+    const list = vi.fn().mockResolvedValue({
+      data: {
+        files: [
+          {
+            id: "file-1",
+            name: "readme.txt",
+            mimeType: "text/plain",
+            modifiedTime: "2026-08-01T00:00:00.000Z",
+            parents: ["root"],
+          },
+        ],
+      },
+    });
+    const drive = { files: { list } } as unknown as drive_v3.Drive;
+
+    const result = await listFilesRecursively(drive, "root");
+
+    expect(result[0].path).toBe("readme.txt");
+  });
 });

@@ -1,5 +1,10 @@
+import { extname } from "node:path";
 import type { drive_v3 } from "googleapis";
-import type { ExcludeConfig, IncludeConfig } from "../config/schema.js";
+import type {
+  ExcludeConfig,
+  IncludeConfig,
+  RenameRule,
+} from "../config/schema.js";
 import type { ClassifiedFile } from "../types.js";
 import { classifyMimeType } from "./convert/classify.js";
 
@@ -14,6 +19,13 @@ interface CompiledInclude {
   active: boolean;
   fileIds: Set<string>;
   namePatterns: RegExp[];
+}
+
+interface CompiledRenameRule {
+  from: string;
+  fromExt: string;
+  to: string;
+  toExt: string;
 }
 
 function compileExclude(exclude?: ExcludeConfig): CompiledExclude {
@@ -33,6 +45,15 @@ function compileInclude(include?: IncludeConfig): CompiledInclude {
   };
 }
 
+function compileRename(rules?: RenameRule[]): CompiledRenameRule[] {
+  return (rules ?? []).map((rule) => ({
+    from: rule.from,
+    fromExt: extname(rule.from),
+    to: rule.to,
+    toExt: extname(rule.to),
+  }));
+}
+
 function isExcluded(
   compiled: CompiledExclude,
   id: string,
@@ -48,16 +69,42 @@ function isIncluded(compiled: CompiledInclude, id: string, name: string): boolea
   return compiled.namePatterns.some((re) => re.test(name));
 }
 
+function splitExt(name: string): { base: string; ext: string } {
+  const ext = extname(name);
+  return ext ? { base: name.slice(0, -ext.length), ext } : { base: name, ext: "" };
+}
+
+function applyRename(rules: CompiledRenameRule[], name: string): string {
+  const { base, ext } = splitExt(name);
+  for (const rule of rules) {
+    const matched = rule.fromExt ? name === rule.from : base === rule.from;
+    if (matched) {
+      return rule.toExt ? rule.to : `${rule.to}${ext}`;
+    }
+  }
+  return name;
+}
+
 export async function listFilesRecursively(
   drive: drive_v3.Drive,
   rootFolderId: string,
   exclude?: ExcludeConfig,
   include?: IncludeConfig,
+  rename?: RenameRule[],
 ): Promise<ClassifiedFile[]> {
   const result: ClassifiedFile[] = [];
   const compiledExclude = compileExclude(exclude);
   const compiledInclude = compileInclude(include);
-  await walk(drive, rootFolderId, "", result, compiledExclude, compiledInclude);
+  const compiledRename = compileRename(rename);
+  await walk(
+    drive,
+    rootFolderId,
+    "",
+    result,
+    compiledExclude,
+    compiledInclude,
+    compiledRename,
+  );
   return result;
 }
 
@@ -68,6 +115,7 @@ async function walk(
   result: ClassifiedFile[],
   exclude: CompiledExclude,
   include: CompiledInclude,
+  rename: CompiledRenameRule[],
 ): Promise<void> {
   let pageToken: string | undefined;
   do {
@@ -82,16 +130,18 @@ async function walk(
     for (const file of files) {
       if (!file.id || !file.name || !file.mimeType || !file.modifiedTime)
         continue;
-      const path = pathPrefix ? `${pathPrefix}/${file.name}` : file.name;
       if (file.mimeType === FOLDER_MIME) {
+        const path = pathPrefix ? `${pathPrefix}/${file.name}` : file.name;
         if (isExcluded(exclude, file.id, file.name)) continue;
-        await walk(drive, file.id, path, result, exclude, include);
+        await walk(drive, file.id, path, result, exclude, include, rename);
       } else {
+        const outputName = applyRename(rename, file.name);
+        const path = pathPrefix ? `${pathPrefix}/${outputName}` : outputName;
         const notIncluded = !isIncluded(include, file.id, file.name);
         const excluded = notIncluded || isExcluded(exclude, file.id, file.name);
         result.push({
           id: file.id,
-          name: file.name,
+          name: outputName,
           mimeType: file.mimeType,
           modifiedTime: file.modifiedTime,
           path,
