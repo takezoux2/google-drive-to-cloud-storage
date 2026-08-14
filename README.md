@@ -119,6 +119,22 @@ mappings:
 
 `include`も省略可能。書式は`exclude`と同じ(`fileIds`/`namePatterns`)だが、意味は逆で、`include`を設定した場合はマッチしたファイルのみが同期対象になり、マッチしなかったファイルは`exclude`と同じ扱い(除外)になる。`include`はファイル単体の判定にのみ使われ、フォルダの走査(再帰)には影響しない — フォルダ自体は`exclude`にマッチしない限り常に配下まで走査される。`include`と`exclude`を両方設定した場合は、まず`include`で対象を絞り込み、次に`exclude`で除外を判定する(`include`にマッチしても`exclude`にもマッチすれば除外される)。`include`を追加した時点で既にコピー先に同期済みのファイルがある場合の挙動も`exclude`と同様で、`include`にマッチしなくなったファイルは次回の同期実行時にコピー先から削除される。
 
+```yaml
+rename:
+  - from: "photo" # 拡張子なし → ベース名で一致判定(photo.jpg, photo.png 等にマッチ)
+    to: "cover" # 拡張子なし → マッチしたファイルの元の拡張子を維持(例: cover.jpg)
+  - from: "old_report.pdf" # 拡張子あり → ファイル名と完全一致
+    to: "report_2024.pdf" # 拡張子あり → そのまま出力名として使用
+
+mappings:
+  - driveFolderId: "1AbCdEfGhIjKlMnOpQrStUvWxYz"
+    destination:
+      provider: gcs
+      bucket: "my-bucket"
+```
+
+`rename`は省略可能。`exclude`/`include`とは異なり**mapping単位ではなくconfig全体に1つだけ**設定し、全mappingに共通で適用される。`from`に拡張子が含まれていない場合、対象ファイル名の拡張子を無視してベース名のみで一致判定する。`to`に拡張子が含まれていない場合、マッチしたファイルの元の拡張子を出力名に付与する。複数のルールに一致しうる場合は配列の先頭から順に評価し、最初にマッチしたルールのみが適用される。リネームはファイルのみが対象でフォルダ名には適用されない。また、`exclude`/`include`の判定は常にリネーム前の元のDriveファイル名に対して行われる。
+
 ## 認証
 
 - Google Drive: ADC(Application Default Credentials)で取得したサービスアカウントを使用する。事前に`gcloud auth application-default login`、または`GOOGLE_APPLICATION_CREDENTIALS`環境変数でサービスアカウントキーを指定する
