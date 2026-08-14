@@ -588,6 +588,24 @@ describe("syncMapping", () => {
       expect.anything(),
       "folder-id",
       { fileIds: ["skip-me"], namePatterns: ["^_"] },
+      undefined,
+    );
+  });
+
+  it("passes the include config through to listFilesRecursively", async () => {
+    const storage = new FakeStorageProvider();
+    listFilesRecursively.mockResolvedValue([]);
+
+    await syncMapping("folder-id", fakeDeps(storage), undefined, {
+      fileIds: ["keep-me"],
+      namePatterns: ["\\.pdf$"],
+    });
+
+    expect(listFilesRecursively).toHaveBeenCalledWith(
+      expect.anything(),
+      "folder-id",
+      undefined,
+      { fileIds: ["keep-me"], namePatterns: ["\\.pdf$"] },
     );
   });
 });

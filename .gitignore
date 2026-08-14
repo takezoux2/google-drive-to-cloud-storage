@@ -14,3 +14,5 @@ terraform/**/.terraform.tfstate.lock.info
 terraform/**/crash.log
 
 .worktrees/
+
+backups/

@@ -1,5 +1,5 @@
 import type { drive_v3 } from "googleapis";
-import type { ExcludeConfig } from "../config/schema.js";
+import type { ExcludeConfig, IncludeConfig } from "../config/schema.js";
 import type { ClassifiedFile } from "../types.js";
 import { classifyMimeType } from "./convert/classify.js";
 
@@ -10,10 +10,26 @@ interface CompiledExclude {
   namePatterns: RegExp[];
 }
 
+interface CompiledInclude {
+  active: boolean;
+  fileIds: Set<string>;
+  namePatterns: RegExp[];
+}
+
 function compileExclude(exclude?: ExcludeConfig): CompiledExclude {
   return {
     fileIds: new Set(exclude?.fileIds ?? []),
     namePatterns: (exclude?.namePatterns ?? []).map((p) => new RegExp(p)),
+  };
+}
+
+function compileInclude(include?: IncludeConfig): CompiledInclude {
+  const fileIds = include?.fileIds ?? [];
+  const namePatterns = include?.namePatterns ?? [];
+  return {
+    active: fileIds.length > 0 || namePatterns.length > 0,
+    fileIds: new Set(fileIds),
+    namePatterns: namePatterns.map((p) => new RegExp(p)),
   };
 }
 
@@ -26,14 +42,22 @@ function isExcluded(
   return compiled.namePatterns.some((re) => re.test(name));
 }
 
+function isIncluded(compiled: CompiledInclude, id: string, name: string): boolean {
+  if (!compiled.active) return true;
+  if (compiled.fileIds.has(id)) return true;
+  return compiled.namePatterns.some((re) => re.test(name));
+}
+
 export async function listFilesRecursively(
   drive: drive_v3.Drive,
   rootFolderId: string,
   exclude?: ExcludeConfig,
+  include?: IncludeConfig,
 ): Promise<ClassifiedFile[]> {
   const result: ClassifiedFile[] = [];
-  const compiled = compileExclude(exclude);
-  await walk(drive, rootFolderId, "", result, compiled);
+  const compiledExclude = compileExclude(exclude);
+  const compiledInclude = compileInclude(include);
+  await walk(drive, rootFolderId, "", result, compiledExclude, compiledInclude);
   return result;
 }
 
@@ -43,6 +67,7 @@ async function walk(
   pathPrefix: string,
   result: ClassifiedFile[],
   exclude: CompiledExclude,
+  include: CompiledInclude,
 ): Promise<void> {
   let pageToken: string | undefined;
   do {
@@ -60,8 +85,10 @@ async function walk(
       const path = pathPrefix ? `${pathPrefix}/${file.name}` : file.name;
       if (file.mimeType === FOLDER_MIME) {
         if (isExcluded(exclude, file.id, file.name)) continue;
-        await walk(drive, file.id, path, result, exclude);
+        await walk(drive, file.id, path, result, exclude, include);
       } else {
+        const notIncluded = !isIncluded(include, file.id, file.name);
+        const excluded = notIncluded || isExcluded(exclude, file.id, file.name);
         result.push({
           id: file.id,
           name: file.name,
@@ -69,7 +96,7 @@ async function walk(
           modifiedTime: file.modifiedTime,
           path,
           parents: file.parents ?? [],
-          conversionKind: isExcluded(exclude, file.id, file.name)
+          conversionKind: excluded
             ? "excluded"
             : classifyMimeType(file.mimeType),
         });

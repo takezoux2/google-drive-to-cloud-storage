@@ -32,16 +32,17 @@ Drive/Docs/SheetsのようなGoogle Cloud外のAPIにスコープを追加する
 5. 以下を実行してブラウザ認可フローでADCを作成する
 
 ```bash
+set GOOGLE_APPLICATION_CREDENTIALS=./client_secret.json
 gcloud auth application-default login \
-  --client-id-file=./client_secret.json \
-  --scopes="openid,https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/drive.readonly,https://www.googleapis.com/auth/documents.readonly,https://www.googleapis.com/auth/spreadsheets.readonly"
+  --client-id-file=%GOOGLE_APPLICATION_CREDENTIALS% \
+  --scopes="openid,https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/drive.readonly,https://www.googleapis.com/auth/documents.readonly,https://www.googleapis.com/auth/spreadsheets.readonly,https://www.googleapis.com/auth/cloud-platform"
 ```
 
 ```powershell
 $env:GOOGLE_APPLICATION_CREDENTIALS = "./client_secret.json"
 gcloud auth application-default login `
-  --client-id-file=./client_secret.json `
-  --scopes="openid,https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/drive.readonly,https://www.googleapis.com/auth/documents.readonly,https://www.googleapis.com/auth/spreadsheets.readonly"
+  --client-id-file=$env:GOOGLE_APPLICATION_CREDENTIALS `
+  --scopes="openid,https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/drive.readonly,https://www.googleapis.com/auth/documents.readonly,https://www.googleapis.com/auth/spreadsheets.readonly,https://www.googleapis.com/auth/cloud-platform"
 ```
 
 `gcs`宛先を使う場合は末尾に`,https://www.googleapis.com/auth/cloud-platform`を追加する。

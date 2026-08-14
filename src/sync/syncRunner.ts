@@ -1,5 +1,5 @@
 import type { docs_v1, drive_v3, sheets_v4 } from "googleapis";
-import type { ExcludeConfig } from "../config/schema.js";
+import type { ExcludeConfig, IncludeConfig } from "../config/schema.js";
 import { convertFile } from "../drive/convert/dispatch.js";
 import { listFilesRecursively } from "../drive/listFiles.js";
 import type { StorageProvider } from "../storage/StorageProvider.js";
@@ -26,6 +26,7 @@ export async function syncMapping(
   driveFolderId: string,
   deps: SyncMappingDeps,
   exclude?: ExcludeConfig,
+  include?: IncludeConfig,
 ): Promise<SyncMappingResult> {
   const result: SyncMappingResult = {
     uploaded: [],
@@ -38,6 +39,7 @@ export async function syncMapping(
     deps.drive,
     driveFolderId,
     exclude,
+    include,
   );
   const metadata = await readMetadata(deps.storage);
 
@@ -57,6 +59,13 @@ export async function syncMapping(
   }
 
   const { toUpload, toDelete } = diffFiles(driveFiles, metadata);
+
+  const toUploadPaths = new Set(toUpload.map((f) => f.path));
+  for (const file of driveFiles) {
+    if (toUploadPaths.has(file.path)) continue;
+    const reason = file.conversionKind === "excluded" ? "excluded" : "up to date";
+    console.log(`Skipped: ${file.path} (${reason})`);
+  }
 
   const deletedPaths = new Set(toDelete.map((d) => d.path));
   const reuploadSourcePaths = new Set(toUpload.map((f) => f.path));
@@ -92,11 +101,11 @@ export async function syncMapping(
           modifiedTime: file.modifiedTime,
         });
       }
+      console.log(`Uploaded: ${file.path}`);
     } catch (err) {
-      result.failed.push({
-        sourcePath: file.path,
-        error: err instanceof Error ? err.message : String(err),
-      });
+      const message = err instanceof Error ? err.message : String(err);
+      result.failed.push({ sourcePath: file.path, error: message });
+      console.log(`Skipped: ${file.path} (failed: ${message})`);
     }
   }
 

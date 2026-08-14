@@ -32,6 +32,7 @@ async function main(): Promise<void> {
         dryRun: options.dryRun,
       },
       mapping.exclude,
+      mapping.include,
     );
 
     console.log(

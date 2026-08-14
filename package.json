@@ -1,5 +1,5 @@
 {
-  "name": "google-drive-to-cloud-storage",
+  "name": "@takezoux2/google-drive-to-cloud-storage",
   "version": "1.0.0",
   "description": "",
   "type": "module",
@@ -7,12 +7,23 @@
     "gdrive-to-cloud-storage": "dist/cli.js"
   },
   "main": "dist/cli.js",
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/takezoux2/google-drive-to-cloud-storage.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "dev": "tsx src/cli.ts -c config.yaml",
     "build": "tsc -p tsconfig.json",
+    "prepare": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "biome check .",

@@ -164,4 +164,68 @@ mappings:
 
     await expect(loadConfig(configPath)).rejects.toThrow();
   });
+
+  it("parses a mapping with include fileIds and namePatterns", async () => {
+    const configPath = path.join(dir, "include.yaml");
+    await writeFile(
+      configPath,
+      `
+mappings:
+  - driveFolderId: "abc123"
+    destination:
+      provider: gcs
+      bucket: "my-bucket"
+    include:
+      fileIds:
+        - "included-id-1"
+      namePatterns:
+        - "\\\\.pdf$"
+`,
+      "utf-8",
+    );
+
+    const config = await loadConfig(configPath);
+
+    expect(config.mappings[0].include?.fileIds).toEqual(["included-id-1"]);
+    expect(config.mappings[0].include?.namePatterns).toEqual(["\\.pdf$"]);
+  });
+
+  it("parses a mapping with no include block (backward compatible)", async () => {
+    const configPath = path.join(dir, "no-include.yaml");
+    await writeFile(
+      configPath,
+      `
+mappings:
+  - driveFolderId: "abc123"
+    destination:
+      provider: gcs
+      bucket: "my-bucket"
+`,
+      "utf-8",
+    );
+
+    const config = await loadConfig(configPath);
+
+    expect(config.mappings[0].include).toBeUndefined();
+  });
+
+  it("throws when an include namePattern is not a valid regular expression", async () => {
+    const configPath = path.join(dir, "include-bad-regex.yaml");
+    await writeFile(
+      configPath,
+      `
+mappings:
+  - driveFolderId: "abc123"
+    destination:
+      provider: gcs
+      bucket: "my-bucket"
+    include:
+      namePatterns:
+        - "["
+`,
+      "utf-8",
+    );
+
+    await expect(loadConfig(configPath)).rejects.toThrow();
+  });
 });

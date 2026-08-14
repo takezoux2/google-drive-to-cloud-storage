@@ -24,14 +24,14 @@ Google Driveのファイルを、ファイル化してCloud Storageへコピー�
 
 ```json
 {
-  files: [
+  "files": [
     {
-      path: "{path in cloud storage}",
-      originUrl: "{url}",
-      linkUrl: "{url}"
+      "path": "{path in cloud storage}",
+      "originUrl": "{url}",
+      "linkUrl": "{url}"
     }, ...
   ],
-  updatedAt: "{timestamp}"
+  "updatedAt": "{timestamp}"
 }
 
 ```
@@ -39,6 +39,29 @@ Google Driveのファイルを、ファイル化してCloud Storageへコピー�
 # 使い方
 
 ## インストール
+
+npmパッケージ(`@takezoux2/google-drive-to-cloud-storage`)として実行できる(`bin: gdrive-to-cloud-storage`)。GitHub Actionsで[GitHub Packages](https://github.com/takezoux2/google-drive-to-cloud-storage/pkgs/npm/google-drive-to-cloud-storage)へ自動publishされる(GitHub Releaseを公開すると`.github/workflows/publish.yml`が実行される)。
+
+GitHub Packagesはpublicパッケージでもnpm CLIでの取得に認証が必要。`~/.npmrc`(またはプロジェクトの`.npmrc`)に以下を設定し、`read:packages`権限を持つGitHub Personal Access Tokenを用意する:
+
+```
+@takezoux2:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+
+グローバルインストールする場合:
+
+```bash
+npm install -g @takezoux2/google-drive-to-cloud-storage
+```
+
+インストールせず`npx`で直接実行する場合:
+
+```bash
+npx @takezoux2/google-drive-to-cloud-storage --config config.yaml
+```
+
+リポジトリから直接ビルドして使う場合:
 
 ```bash
 pnpm install
@@ -63,6 +86,17 @@ mappings:
         - "^_.*"
         - "\\.tmp$"
 
+  - driveFolderId: "1AbCdEfGhIjKlMnOpQrStUvWxYz2"
+    destination:
+      provider: gcs
+      bucket: "my-bucket"
+      prefix: "backups/team-a2"
+    include:
+      fileIds:
+        - "1IncludedFolderOrFileId"
+      namePatterns:
+        - "\\.pdf$"
+
   - driveFolderId: "2XyZ..."
     destination:
       provider: s3
@@ -83,6 +117,8 @@ mappings:
 
 `exclude`に追加した時点で既にコピー先に同期済みのファイルがある場合、次回の同期実行時にそのコピーはコピー先から削除される(MIME種別による除外と同じ挙動)。適用前に`--dry-run`で削除対象を確認することを推奨する。
 
+`include`も省略可能。書式は`exclude`と同じ(`fileIds`/`namePatterns`)だが、意味は逆で、`include`を設定した場合はマッチしたファイルのみが同期対象になり、マッチしなかったファイルは`exclude`と同じ扱い(除外)になる。`include`はファイル単体の判定にのみ使われ、フォルダの走査(再帰)には影響しない — フォルダ自体は`exclude`にマッチしない限り常に配下まで走査される。`include`と`exclude`を両方設定した場合は、まず`include`で対象を絞り込み、次に`exclude`で除外を判定する(`include`にマッチしても`exclude`にもマッチすれば除外される)。`include`を追加した時点で既にコピー先に同期済みのファイルがある場合の挙動も`exclude`と同様で、`include`にマッチしなくなったファイルは次回の同期実行時にコピー先から削除される。
+
 ## 認証
 
 - Google Drive: ADC(Application Default Credentials)で取得したサービスアカウントを使用する。事前に`gcloud auth application-default login`、または`GOOGLE_APPLICATION_CREDENTIALS`環境変数でサービスアカウントキーを指定する
@@ -90,6 +126,15 @@ mappings:
 - S3: AWSのデフォルト認証チェーン(環境変数、`~/.aws/credentials`、IAMロール等)を使用する
 
 ## 実行
+
+グローバルインストール、または`npx`で実行する場合:
+
+```bash
+gdrive-to-cloud-storage --config config.yaml
+gdrive-to-cloud-storage --config config.yaml --dry-run
+```
+
+リポジトリから直接ビルドして実行する場合:
 
 ```bash
 node dist/cli.js --config config.yaml
