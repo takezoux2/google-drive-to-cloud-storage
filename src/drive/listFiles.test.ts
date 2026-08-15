@@ -674,4 +674,135 @@ describe("listFilesRecursively", () => {
 
     expect(result[0].path).toBe("readme.txt");
   });
+
+  it("records the matched rule's index in matchedRenameIndices", async () => {
+    const list = vi.fn().mockResolvedValue({
+      data: {
+        files: [
+          {
+            id: "file-photo",
+            name: "photo.jpg",
+            mimeType: "image/jpeg",
+            modifiedTime: "2026-08-01T00:00:00.000Z",
+            parents: ["root"],
+          },
+        ],
+      },
+    });
+    const drive = { files: { list } } as unknown as drive_v3.Drive;
+    const matchedRenameIndices = new Set<number>();
+
+    await listFilesRecursively(
+      drive,
+      "root",
+      undefined,
+      undefined,
+      [
+        { from: "old_report.pdf", to: "report_2024.pdf" },
+        { from: "photo", to: "cover" },
+      ],
+      matchedRenameIndices,
+    );
+
+    expect(matchedRenameIndices).toEqual(new Set([1]));
+  });
+
+  it("does not record an index for a rule that never matches any file", async () => {
+    const list = vi.fn().mockResolvedValue({
+      data: {
+        files: [
+          {
+            id: "file-photo",
+            name: "photo.jpg",
+            mimeType: "image/jpeg",
+            modifiedTime: "2026-08-01T00:00:00.000Z",
+            parents: ["root"],
+          },
+        ],
+      },
+    });
+    const drive = { files: { list } } as unknown as drive_v3.Drive;
+    const matchedRenameIndices = new Set<number>();
+
+    await listFilesRecursively(
+      drive,
+      "root",
+      undefined,
+      undefined,
+      [
+        { from: "photo", to: "cover" },
+        { from: "unused_rule.pdf", to: "x.pdf" },
+      ],
+      matchedRenameIndices,
+    );
+
+    expect(matchedRenameIndices).toEqual(new Set([0]));
+    expect(matchedRenameIndices.has(1)).toBe(false);
+  });
+
+  it("records indices for multiple matching rules across multiple files", async () => {
+    const list = vi.fn().mockResolvedValue({
+      data: {
+        files: [
+          {
+            id: "file-photo",
+            name: "photo.jpg",
+            mimeType: "image/jpeg",
+            modifiedTime: "2026-08-01T00:00:00.000Z",
+            parents: ["root"],
+          },
+          {
+            id: "file-report",
+            name: "old_report.pdf",
+            mimeType: "application/pdf",
+            modifiedTime: "2026-08-01T00:00:00.000Z",
+            parents: ["root"],
+          },
+        ],
+      },
+    });
+    const drive = { files: { list } } as unknown as drive_v3.Drive;
+    const matchedRenameIndices = new Set<number>();
+
+    await listFilesRecursively(
+      drive,
+      "root",
+      undefined,
+      undefined,
+      [
+        { from: "photo", to: "cover" },
+        { from: "old_report.pdf", to: "report_2024.pdf" },
+      ],
+      matchedRenameIndices,
+    );
+
+    expect(matchedRenameIndices).toEqual(new Set([0, 1]));
+  });
+
+  it("works without matchedRenameIndices provided (optional, no crash)", async () => {
+    const list = vi.fn().mockResolvedValue({
+      data: {
+        files: [
+          {
+            id: "file-photo",
+            name: "photo.jpg",
+            mimeType: "image/jpeg",
+            modifiedTime: "2026-08-01T00:00:00.000Z",
+            parents: ["root"],
+          },
+        ],
+      },
+    });
+    const drive = { files: { list } } as unknown as drive_v3.Drive;
+
+    const result = await listFilesRecursively(
+      drive,
+      "root",
+      undefined,
+      undefined,
+      [{ from: "photo", to: "cover" }],
+    );
+
+    expect(result[0].path).toBe("cover.jpg");
+  });
 });

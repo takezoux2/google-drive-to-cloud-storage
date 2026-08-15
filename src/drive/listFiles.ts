@@ -80,11 +80,17 @@ function splitExt(name: string): { base: string; ext: string } {
     : { base: name, ext: "" };
 }
 
-function applyRename(rules: CompiledRenameRule[], name: string): string {
+function applyRename(
+  rules: CompiledRenameRule[],
+  name: string,
+  matchedIndices?: Set<number>,
+): string {
   const { base, ext } = splitExt(name);
-  for (const rule of rules) {
+  for (let i = 0; i < rules.length; i++) {
+    const rule = rules[i];
     const matched = rule.fromExt ? name === rule.from : base === rule.from;
     if (matched) {
+      matchedIndices?.add(i);
       return rule.toExt ? rule.to : `${rule.to}${ext}`;
     }
   }
@@ -97,6 +103,7 @@ export async function listFilesRecursively(
   exclude?: ExcludeConfig,
   include?: IncludeConfig,
   rename?: RenameRule[],
+  matchedRenameIndices?: Set<number>,
 ): Promise<ClassifiedFile[]> {
   const result: ClassifiedFile[] = [];
   const compiledExclude = compileExclude(exclude);
@@ -110,6 +117,7 @@ export async function listFilesRecursively(
     compiledExclude,
     compiledInclude,
     compiledRename,
+    matchedRenameIndices,
   );
   return result;
 }
@@ -122,6 +130,7 @@ async function walk(
   exclude: CompiledExclude,
   include: CompiledInclude,
   rename: CompiledRenameRule[],
+  matchedRenameIndices?: Set<number>,
 ): Promise<void> {
   let pageToken: string | undefined;
   do {
@@ -139,9 +148,18 @@ async function walk(
       if (file.mimeType === FOLDER_MIME) {
         const path = pathPrefix ? `${pathPrefix}/${file.name}` : file.name;
         if (isExcluded(exclude, file.id, file.name)) continue;
-        await walk(drive, file.id, path, result, exclude, include, rename);
+        await walk(
+          drive,
+          file.id,
+          path,
+          result,
+          exclude,
+          include,
+          rename,
+          matchedRenameIndices,
+        );
       } else {
-        const outputName = applyRename(rename, file.name);
+        const outputName = applyRename(rename, file.name, matchedRenameIndices);
         const path = pathPrefix ? `${pathPrefix}/${outputName}` : outputName;
         const notIncluded = !isIncluded(include, file.id, file.name);
         const excluded = notIncluded || isExcluded(exclude, file.id, file.name);
