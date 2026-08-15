@@ -805,4 +805,62 @@ describe("listFilesRecursively", () => {
 
     expect(result[0].path).toBe("cover.jpg");
   });
+
+  it("accumulates matched indices across multiple listFilesRecursively calls sharing one Set (simulating multiple mappings)", async () => {
+    const rename = [
+      { from: "photo", to: "cover" },
+      { from: "notes", to: "memo" },
+    ];
+    const matchedRenameIndices = new Set<number>();
+
+    const listA = vi.fn().mockResolvedValue({
+      data: {
+        files: [
+          {
+            id: "file-photo",
+            name: "photo.jpg",
+            mimeType: "image/jpeg",
+            modifiedTime: "2026-08-01T00:00:00.000Z",
+            parents: ["root"],
+          },
+        ],
+      },
+    });
+    const driveA = { files: { list: listA } } as unknown as drive_v3.Drive;
+
+    await listFilesRecursively(
+      driveA,
+      "root",
+      undefined,
+      undefined,
+      rename,
+      matchedRenameIndices,
+    );
+
+    const listB = vi.fn().mockResolvedValue({
+      data: {
+        files: [
+          {
+            id: "file-unrelated",
+            name: "unrelated.txt",
+            mimeType: "text/plain",
+            modifiedTime: "2026-08-01T00:00:00.000Z",
+            parents: ["root"],
+          },
+        ],
+      },
+    });
+    const driveB = { files: { list: listB } } as unknown as drive_v3.Drive;
+
+    await listFilesRecursively(
+      driveB,
+      "root",
+      undefined,
+      undefined,
+      rename,
+      matchedRenameIndices,
+    );
+
+    expect(matchedRenameIndices).toEqual(new Set([0]));
+  });
 });
