@@ -20,6 +20,7 @@ async function main(): Promise<void> {
   console.log(`Authenticated as: ${authenticatedEmail ?? "unavailable"}`);
 
   let hasFailure = false;
+  const matchedRenameIndices = new Set<number>();
   for (const mapping of config.mappings) {
     const storage = createStorageProvider(mapping.destination);
     const result = await syncMapping(
@@ -34,6 +35,7 @@ async function main(): Promise<void> {
       mapping.exclude,
       mapping.include,
       config.rename,
+      matchedRenameIndices,
     );
 
     console.log(
@@ -42,6 +44,14 @@ async function main(): Promise<void> {
     for (const failure of result.failed) {
       console.error(`  FAILED ${failure.sourcePath}: ${failure.error}`);
       hasFailure = true;
+    }
+  }
+
+  for (const [i, rule] of (config.rename ?? []).entries()) {
+    if (!matchedRenameIndices.has(i)) {
+      console.log(
+        `Rename rule not matched: from="${rule.from}" to="${rule.to}"`,
+      );
     }
   }
 

@@ -141,6 +141,8 @@ mappings:
 
 拡張子の判定はNode.jsの`path.extname()`の仕様にそのまま従うため、最後の`.`より後ろの部分のみが「拡張子」とみなされる。そのため`2026.08.14 議事録`のようにドットを複数含むファイル名(例: Googleドキュメントのタイトル)では、`.14 議事録`が`path.extname()`上の「拡張子」として扱われ、拡張子なしの`to`と組み合わせた場合に意図しない出力名になることがある。ファイル名に(本来の拡張子以外の)ドットが含まれる場合は、`--dry-run`で`rename`の出力結果を必ず確認すること。
 
+実行が全mapping分終わった後、`rename`に定義したルールのうち今回の実行で一度もファイルにマッチしなかったものは、`Rename rule not matched: from="..." to="..."`という形でログに出力される(`--dry-run`でも出力される)。いずれかのmappingでマッチすればそのルールは「マッチした」扱いになり、mapping単位では報告されない。
+
 ## 認証
 
 - Google Drive: ADC(Application Default Credentials)で取得したサービスアカウントを使用する。事前に`gcloud auth application-default login`、または`GOOGLE_APPLICATION_CREDENTIALS`環境変数でサービスアカウントキーを指定する
