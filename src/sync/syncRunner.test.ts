@@ -590,6 +590,7 @@ describe("syncMapping", () => {
       { fileIds: ["skip-me"], namePatterns: ["^_"] },
       undefined,
       undefined,
+      undefined,
     );
   });
 
@@ -607,6 +608,7 @@ describe("syncMapping", () => {
       "folder-id",
       undefined,
       { fileIds: ["keep-me"], namePatterns: ["\\.pdf$"] },
+      undefined,
       undefined,
     );
   });
@@ -629,6 +631,7 @@ describe("syncMapping", () => {
       undefined,
       undefined,
       [{ from: "photo", to: "cover" }],
+      undefined,
     );
   });
 
@@ -662,5 +665,29 @@ describe("syncMapping", () => {
 
     expect(result.uploaded).toContain("cover.md");
     expect(storage.store.get("cover.md")?.toString()).toBe("# Cover");
+  });
+
+  it("passes matchedRenameIndices through to listFilesRecursively", async () => {
+    const storage = new FakeStorageProvider();
+    listFilesRecursively.mockResolvedValue([]);
+    const matchedRenameIndices = new Set<number>();
+
+    await syncMapping(
+      "folder-id",
+      fakeDeps(storage),
+      undefined,
+      undefined,
+      [{ from: "photo", to: "cover" }],
+      matchedRenameIndices,
+    );
+
+    expect(listFilesRecursively).toHaveBeenCalledWith(
+      expect.anything(),
+      "folder-id",
+      undefined,
+      undefined,
+      [{ from: "photo", to: "cover" }],
+      matchedRenameIndices,
+    );
   });
 });

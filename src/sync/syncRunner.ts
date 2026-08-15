@@ -32,6 +32,7 @@ export async function syncMapping(
   exclude?: ExcludeConfig,
   include?: IncludeConfig,
   rename?: RenameRule[],
+  matchedRenameIndices?: Set<number>,
 ): Promise<SyncMappingResult> {
   const result: SyncMappingResult = {
     uploaded: [],
@@ -46,6 +47,7 @@ export async function syncMapping(
     exclude,
     include,
     rename,
+    matchedRenameIndices,
   );
   const metadata = await readMetadata(deps.storage);
 
