@@ -6,6 +6,7 @@ import type {
 } from "../config/schema.js";
 import { convertFile } from "../drive/convert/dispatch.js";
 import { listFilesRecursively } from "../drive/listFiles.js";
+import { toShareUrl } from "../drive/shareUrl.js";
 import type { StorageProvider } from "../storage/StorageProvider.js";
 import type { MetadataFileEntry, SyncMetadata } from "../types.js";
 import { diffFiles } from "./diff.js";
@@ -99,6 +100,7 @@ export async function syncMapping(
         }
       }
       const url = `https://drive.google.com/open?id=${file.id}`;
+      const linkUrl = toShareUrl(file.webViewLink, url);
       for (const output of outputs) {
         result.uploaded.push(output.outputPath);
         uploadedPaths.add(output.outputPath);
@@ -106,7 +108,7 @@ export async function syncMapping(
           path: output.outputPath,
           sourcePath: file.path,
           originUrl: url,
-          linkUrl: url,
+          linkUrl,
           modifiedTime: file.modifiedTime,
         });
       }

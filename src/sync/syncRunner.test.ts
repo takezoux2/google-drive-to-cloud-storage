@@ -88,6 +88,40 @@ describe("syncMapping", () => {
     ]);
   });
 
+  it("uses the Drive share URL as linkUrl when webViewLink is available", async () => {
+    const storage = new FakeStorageProvider();
+    const file: ClassifiedFile = {
+      id: "id-1",
+      name: "report",
+      mimeType: "application/vnd.google-apps.document",
+      modifiedTime: "2026-08-01T00:00:00.000Z",
+      path: "report",
+      parents: [],
+      webViewLink: "https://docs.google.com/document/d/id-1/edit?usp=drivesdk",
+      conversionKind: "google-doc-to-markdown",
+    };
+    listFilesRecursively.mockResolvedValue([file]);
+    convertFile.mockResolvedValue([
+      {
+        outputPath: "report.md",
+        data: Buffer.from("# R"),
+        contentType: "text/markdown",
+      },
+    ]);
+
+    await syncMapping("folder-id", fakeDeps(storage));
+
+    const metadata = JSON.parse(
+      storage.store.get("metadata.json")?.toString() ?? "{}",
+    ) as SyncMetadata;
+    expect(metadata.files[0].originUrl).toBe(
+      "https://drive.google.com/open?id=id-1",
+    );
+    expect(metadata.files[0].linkUrl).toBe(
+      "https://docs.google.com/document/d/id-1/edit?usp=sharing",
+    );
+  });
+
   it("deletes files that are no longer present in Drive", async () => {
     const storage = new FakeStorageProvider();
     const existingMetadata: SyncMetadata = {

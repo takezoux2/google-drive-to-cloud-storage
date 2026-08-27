@@ -36,6 +36,9 @@ Google Driveのファイルを、ファイル化してCloud Storageへコピー�
 
 ```
 
+- `originUrl`: ファイルIDから組み立てた `https://drive.google.com/open?id={fileId}` 形式のURL
+- `linkUrl`: Driveの共有URL(Drive APIの`webViewLink`の`usp`を`sharing`に置き換えたもの)。例: `https://docs.google.com/document/d/1SDDg4I_b8s8b0_PFtmtn-LxHNH8Y70M7kIHNUVUGkbo/edit?usp=sharing`。取得できなかった場合は`originUrl`と同じ値になる
+
 # 使い方
 
 ## インストール

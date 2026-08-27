@@ -68,6 +68,36 @@ describe("listFilesRecursively", () => {
     );
   });
 
+  it("requests webViewLink and carries it onto the listed file", async () => {
+    const list = vi.fn().mockResolvedValue({
+      data: {
+        files: [
+          {
+            id: "file-1",
+            name: "report",
+            mimeType: "application/vnd.google-apps.document",
+            modifiedTime: "2026-08-01T00:00:00.000Z",
+            parents: ["root"],
+            webViewLink:
+              "https://docs.google.com/document/d/file-1/edit?usp=drivesdk",
+          },
+        ],
+      },
+    });
+    const drive = { files: { list } } as unknown as drive_v3.Drive;
+
+    const result = await listFilesRecursively(drive, "root");
+
+    expect(list).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fields: expect.stringContaining("webViewLink"),
+      }),
+    );
+    expect(result[0].webViewLink).toBe(
+      "https://docs.google.com/document/d/file-1/edit?usp=drivesdk",
+    );
+  });
+
   it("excludes a file by fileId, marking it conversionKind excluded", async () => {
     const list = vi.fn().mockResolvedValue({
       data: {

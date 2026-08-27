@@ -136,7 +136,8 @@ async function walk(
   do {
     const res = await drive.files.list({
       q: `'${folderId}' in parents and trashed = false`,
-      fields: "nextPageToken, files(id, name, mimeType, modifiedTime, parents)",
+      fields:
+        "nextPageToken, files(id, name, mimeType, modifiedTime, parents, webViewLink)",
       pageToken,
       supportsAllDrives: true,
       includeItemsFromAllDrives: true,
@@ -170,6 +171,7 @@ async function walk(
           modifiedTime: file.modifiedTime,
           path,
           parents: file.parents ?? [],
+          webViewLink: file.webViewLink ?? undefined,
           conversionKind: excluded
             ? "excluded"
             : classifyMimeType(file.mimeType),

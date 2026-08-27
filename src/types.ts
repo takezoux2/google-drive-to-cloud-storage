@@ -13,6 +13,8 @@ export interface DriveFileInfo {
   modifiedTime: string;
   path: string;
   parents: string[];
+  /** Drive上の共有URL(`webViewLink`)。取得できなかった場合はundefined。 */
+  webViewLink?: string;
 }
 
 export interface ClassifiedFile extends DriveFileInfo {
