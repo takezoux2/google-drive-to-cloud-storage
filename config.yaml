@@ -4,3 +4,8 @@ mappings:
       provider: "local"
       path: "./backups/a"
       prefix: "docs"
+rename:
+  - from: "(利用者非公開)利用者向けAIナレッジ"
+    to: "implicit-ai-knowledge"
+  - from: "あばばば"
+    to: "ababa"
