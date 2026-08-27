@@ -4,7 +4,7 @@
   "description": "",
   "type": "module",
   "bin": {
-    "gdrive-to-cloud-storage": "dist/cli.js"
+    "sync-gdrive": "dist/cli.js"
   },
   "main": "dist/cli.js",
   "files": [

@@ -43,7 +43,7 @@ Google Driveのファイルを、ファイル化してCloud Storageへコピー�
 
 ## インストール
 
-npmパッケージ(`@takezoux2/google-drive-to-cloud-storage`)として実行できる(`bin: gdrive-to-cloud-storage`)。GitHub Actionsで[GitHub Packages](https://github.com/takezoux2/google-drive-to-cloud-storage/pkgs/npm/google-drive-to-cloud-storage)へ自動publishされる(GitHub Releaseを公開すると`.github/workflows/publish.yml`が実行される)。
+npmパッケージ(`@takezoux2/google-drive-to-cloud-storage`)として実行できる(`bin: sync-gdrive`)。GitHub Actionsで[GitHub Packages](https://github.com/takezoux2/google-drive-to-cloud-storage/pkgs/npm/google-drive-to-cloud-storage)へ自動publishされる(GitHub Releaseを公開すると`.github/workflows/publish.yml`が実行される)。
 
 GitHub Packagesはpublicパッケージでもnpm CLIでの取得に認証が必要。`~/.npmrc`(またはプロジェクトの`.npmrc`)に以下を設定し、`read:packages`権限を持つGitHub Personal Access Tokenを用意する:
 
@@ -159,8 +159,8 @@ mappings:
 グローバルインストール、または`npx`で実行する場合:
 
 ```bash
-gdrive-to-cloud-storage --config config.yaml
-gdrive-to-cloud-storage --config config.yaml --dry-run
+sync-gdrive --config config.yaml
+sync-gdrive --config config.yaml --dry-run
 ```
 
 リポジトリから直接ビルドして実行する場合:

@@ -8,7 +8,7 @@ import { syncMapping } from "./sync/syncRunner.js";
 async function main(): Promise<void> {
   const program = new Command();
   program
-    .name("gdrive-to-cloud-storage")
+    .name("sync-gdrive")
     .requiredOption("-c, --config <path>", "path to config YAML file")
     .option("--dry-run", "list changes without uploading or deleting", false);
   program.parse(process.argv);
