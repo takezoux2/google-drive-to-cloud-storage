@@ -58,6 +58,25 @@ describe("convertFile", () => {
     ]);
   });
 
+  it("does not double the .md extension when the path already ends with .md (e.g. renamed to x.md)", async () => {
+    const docs = {
+      documents: { get: vi.fn().mockResolvedValue({ data: {} }) },
+    } as unknown as docs_v1.Docs;
+    const deps = {
+      drive: {} as drive_v3.Drive,
+      docs,
+      sheets: {} as sheets_v4.Sheets,
+    };
+    const file = baseFile({
+      conversionKind: "google-doc-to-markdown",
+      path: "docs/notes.md",
+    });
+
+    const outputs = await convertFile(file, deps);
+
+    expect(outputs[0].outputPath).toBe("docs/notes.md");
+  });
+
   it("converts a Google Sheet to one CSV output per sheet", async () => {
     const sheets = {} as sheets_v4.Sheets;
     const deps = {

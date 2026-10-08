@@ -26,7 +26,7 @@ export async function convertFile(
       const markdown = convertDocToMarkdown(res.data);
       return [
         {
-          outputPath: `${file.path}.md`,
+          outputPath: /\.md$/i.test(file.path) ? file.path : `${file.path}.md`,
           data: Buffer.from(markdown, "utf-8"),
           contentType: "text/markdown",
         },

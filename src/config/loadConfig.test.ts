@@ -2,7 +2,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { loadConfig } from "./loadConfig.js";
+import { CONFIG_ENV_VAR, loadConfig, resolveConfig } from "./loadConfig.js";
 
 describe("loadConfig", () => {
   let dir: string;
@@ -313,5 +313,82 @@ mappings:
     );
 
     await expect(loadConfig(configPath)).rejects.toThrow();
+  });
+});
+
+describe("resolveConfig", () => {
+  const validYaml = `
+mappings:
+  - driveFolderId: "env-folder"
+    destination:
+      provider: gcs
+      bucket: "env-bucket"
+`;
+
+  it("loads from the config file when a path is given", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "gdrive-sync-"));
+    const configPath = path.join(dir, "config.yaml");
+    await writeFile(
+      configPath,
+      `
+mappings:
+  - driveFolderId: "file-folder"
+    destination:
+      provider: gcs
+      bucket: "file-bucket"
+`,
+      "utf-8",
+    );
+
+    const config = await resolveConfig({
+      configPath,
+      env: { [CONFIG_ENV_VAR]: validYaml },
+    });
+
+    expect(config.mappings[0].driveFolderId).toBe("file-folder");
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it("parses raw YAML from the environment variable when no path is given", async () => {
+    const config = await resolveConfig({
+      env: { [CONFIG_ENV_VAR]: validYaml },
+    });
+
+    expect(config.mappings[0].driveFolderId).toBe("env-folder");
+    expect(config.mappings[0].destination.bucket).toBe("env-bucket");
+  });
+
+  it("parses raw JSON from the environment variable", async () => {
+    const config = await resolveConfig({
+      env: {
+        [CONFIG_ENV_VAR]: JSON.stringify({
+          mappings: [
+            {
+              driveFolderId: "json-folder",
+              destination: { provider: "local", path: "./out" },
+            },
+          ],
+        }),
+      },
+    });
+
+    expect(config.mappings[0].driveFolderId).toBe("json-folder");
+    expect(config.mappings[0].destination.path).toBe("./out");
+  });
+
+  it("throws when the environment variable holds an invalid config", async () => {
+    await expect(
+      resolveConfig({ env: { [CONFIG_ENV_VAR]: "foo: bar\n" } }),
+    ).rejects.toThrow();
+  });
+
+  it("throws when neither a path nor the environment variable is given", async () => {
+    await expect(resolveConfig({ env: {} })).rejects.toThrow(CONFIG_ENV_VAR);
+  });
+
+  it("ignores a blank environment variable", async () => {
+    await expect(
+      resolveConfig({ env: { [CONFIG_ENV_VAR]: "   " } }),
+    ).rejects.toThrow(CONFIG_ENV_VAR);
   });
 });

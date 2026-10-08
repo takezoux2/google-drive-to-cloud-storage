@@ -148,6 +148,36 @@ mappings:
 
 このマッチ判定はDrive走査中に`exclude`/`include`によるフィルタ適用前に行われるため、`exclude`/`include`で個別に除外されるファイルであっても、名前がマッチすれば該当ルールは「マッチした」扱いになる。ただし、マッチするファイルが`exclude`にマッチしたフォルダの配下にしか存在しない場合、そのフォルダ自体が走査されないため該当ルールは「マッチしなかった」と報告される。また、前述のとおりルールは配列の先頭から順に評価され最初にマッチしたルールのみが適用されるため、常に前段のルールに同じファイルを奪われて自分自身がマッチする機会がないルールも「マッチしなかった」と報告される(そのルールが以降のルールに埋もれて到達不能であることを示すシグナルとして扱ってよい)。
 
+## 設定ファイルの代わりに環境変数で渡す
+
+設定ファイルを配置できない環境(CI、コンテナ、Cloud Run等)向けに、**設定の中身そのもの**(ファイルパスではない)を`SYNC_GDRIVE_CONFIG`環境変数へ直接指定できる。`-c/--config`を省略した場合にこの環境変数が読まれる。
+
+```bash
+export SYNC_GDRIVE_CONFIG='
+mappings:
+  - driveFolderId: "1AbCdEfGhIjKlMnOpQrStUvWxYz"
+    destination:
+      provider: gcs
+      bucket: "my-bucket"
+      prefix: "backups/team-a"
+'
+sync-gdrive
+sync-gdrive --dry-run
+```
+
+YAMLはJSONのスーパーセットなので、JSON文字列をそのまま渡すこともできる(1行で渡したい場合に便利):
+
+```bash
+SYNC_GDRIVE_CONFIG='{"mappings":[{"driveFolderId":"1AbCdEf","destination":{"provider":"gcs","bucket":"my-bucket"}}]}' sync-gdrive
+```
+
+内容のバリデーションは設定ファイルの場合と完全に同一で、不正な設定はファイル指定時と同じエラーになる。
+
+優先順位と挙動:
+
+- `-c/--config`を指定した場合はそちらが優先され、`SYNC_GDRIVE_CONFIG`が設定されていても無視される
+- `-c/--config`を省略し`SYNC_GDRIVE_CONFIG`も未設定(または空白のみ)の場合はエラーで終了する
+
 ## 認証
 
 - Google Drive: ADC(Application Default Credentials)で取得したサービスアカウントを使用する。事前に`gcloud auth application-default login`、または`GOOGLE_APPLICATION_CREDENTIALS`環境変数でサービスアカウントキーを指定する
@@ -169,3 +199,5 @@ sync-gdrive --config config.yaml --dry-run
 node dist/cli.js --config config.yaml
 node dist/cli.js --config config.yaml --dry-run
 ```
+
+`--config`を省略した場合は`SYNC_GDRIVE_CONFIG`環境変数の内容が設定として読み込まれる(前述の「設定ファイルの代わりに環境変数で渡す」を参照)。
